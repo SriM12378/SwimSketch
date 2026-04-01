@@ -1059,6 +1059,7 @@
               <div class="type-opt tech" onclick="selType(this,'tech')">Technique</div>
               <div class="type-opt aerobic" onclick="selType(this,'aerobic')">Aerobic</div>
               <div class="type-opt im" onclick="selType(this,'im')">IM</div>
+              <div class="type-opt rest" onclick="selType(this,'rest')">Rest</div>
             </div>
           </div>
         </div>
@@ -1122,6 +1123,8 @@
       <div class="sent-icon">▶</div>
       <div class="sent-title">Sent!</div>
       <div class="sent-sub" id="sentSub">Practice sent to all swimmers</div>
+      <pre id="sentPlan" style="background:#F4F1EB;border:1px solid #C8C4B8;border-radius:8px;padding:10px;margin:10px 0;white-space:pre-wrap;word-break:break-word;max-height:220px;overflow:auto;font-size:11px;"></pre>
+      <button class="save-btn" style="margin-bottom:8px;" onclick="copyPracticePlan()">Copy Practice Plan</button>
       <button class="sent-close" onclick="closeSent()">Done</button>
     </div>
   </div>
@@ -1321,8 +1324,8 @@ function selType(el, t) {
   el.classList.add('sel');
   customType = t;
 }
-const pillColors = { sprint:'#E8432D', tech:'#D97B2B', aerobic:'#2B7DD9', im:'#7C3AED' };
-const pillLabels = { sprint:'Sprint', tech:'Technique', aerobic:'Aerobic', im:'IM' };
+const pillColors = { sprint:'#E8432D', tech:'#D97B2B', aerobic:'#2B7DD9', im:'#7C3AED', rest:'#9CA3AF' };
+const pillLabels = { sprint:'Sprint', tech:'Technique', aerobic:'Aerobic', im:'IM', rest:'Rest' };
 function saveCustom() {
   const name = document.getElementById('cName').value.trim();
   if (!name) { document.getElementById('cName').focus(); return; }
@@ -1343,12 +1346,30 @@ function saveCustom() {
   });
 
   const palette = document.getElementById('palette');
-  const footer = palette.querySelector('.pal-footer');
-  const div = document.createElement('div'); div.className = 'pal-divider';
-  const sec = document.createElement('div'); sec.className = 'pal-section';
-  sec.appendChild(chip);
-  palette.insertBefore(div, footer);
-  palette.insertBefore(sec, footer);
+
+  const categoryLabels = { sprint: 'Sprint', tech: 'Technique', aerobic: 'Aerobic', im: 'IM', rest: 'Rest' };
+  const categoryName = categoryLabels[customType] || 'Custom';
+  const section = Array.from(palette.querySelectorAll('.pal-section')).find(s => {
+    const label = s.querySelector('.pal-label');
+    return label && label.textContent.trim() === categoryName;
+  });
+
+  if (section) {
+    section.appendChild(chip);
+  } else {
+    // Fallback to bottom-most area, preserving existing behavior
+    const footer = palette.querySelector('.pal-footer');
+    const div = document.createElement('div'); div.className = 'pal-divider';
+    const sec = document.createElement('div'); sec.className = 'pal-section';
+    const head = document.createElement('div');
+    head.className = 'pal-label';
+    head.textContent = categoryName;
+    sec.appendChild(head);
+    sec.appendChild(chip);
+    palette.insertBefore(div, footer);
+    palette.insertBefore(sec, footer);
+  }
+
   closeCustomModal();
   showToast(`"${name}" added to palette`);
 }
@@ -1592,11 +1613,55 @@ function moveDot(e) {
 }
 
 // ── SEND TO TEAM ──
-function sendToTeam() {
-  const total = lanes.reduce((sum, l) => sum + l.swimmers.length, 0);
-  document.getElementById('sentSub').textContent = `Practice sent to ${total} swimmer${total!==1?'s':''}`;
-  document.getElementById('sentOverlay').classList.add('show');
+function formatPracticePlan() {
+  const lines = [];
+  lines.push(`Practice: ${sessionName}`);
+  lines.push(`Lanes: ${lanes.length}`);
+  lines.push('');
+
+  lanes.forEach(lane => {
+    const swimmers = lane.swimmers.length ? lane.swimmers.join(', ') : 'No swimmers';
+    lines.push(`Lane ${lane.id} (${swimmers})`);
+    if (lane.blocks.length === 0) {
+      lines.push('  (No sets yet)');
+    } else {
+      lane.blocks.forEach((b, i) => {
+        const key = b.type ? `${b.type.charAt(0).toUpperCase()}${b.type.slice(1)}` : 'Set';
+        lines.push(`  ${i+1}. ${b.name}${b.sub ? ` ${b.sub}` : ''} [${key}]`);
+      });
+    }
+    lines.push('');
+  });
+
+  const totalSwimmers = lanes.reduce((sum, l) => sum + l.swimmers.length, 0);
+  lines.push(`Total swimmers: ${totalSwimmers}`);
+
+  return lines.join('\n');
 }
+
+function sendToTeam() {
+  const totalSwimmers = lanes.reduce((sum, l) => sum + l.swimmers.length, 0);
+  document.getElementById('sentSub').textContent = `Practice sent to ${totalSwimmers} swimmer${totalSwimmers !== 1 ? 's' : ''}`;
+  const plan = formatPracticePlan();
+  document.getElementById('sentPlan').textContent = plan;
+  document.getElementById('sentOverlay').classList.add('show');
+  navigator.clipboard.writeText(plan).then(() => {
+    showToast('Practice plan copied to clipboard');
+  }, () => {
+    showToast('Press Copy Practice Plan to copy text');
+  });
+}
+
+function copyPracticePlan() {
+  const plan = document.getElementById('sentPlan').textContent;
+  if (!plan) { showToast('No plan text available'); return; }
+  navigator.clipboard.writeText(plan).then(() => {
+    showToast('Practice plan copied');
+  }, () => {
+    showToast('Clipboard not available');
+  });
+}
+
 function closeSent() { document.getElementById('sentOverlay').classList.remove('show'); }
 
 // ── TOAST ──

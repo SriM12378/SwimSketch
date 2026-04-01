@@ -1260,6 +1260,18 @@
       </div>
     </div>
   </div>
+
+  <!-- Remove lane modal -->
+  <div class="session-modal" id="removeLaneModal">
+    <div class="session-card">
+      <h3>Remove Lane</h3>
+      <input class="session-input" id="removeLaneInput" placeholder="Lane # to remove" type="number" min="1"/>
+      <div class="session-btns">
+        <button class="session-ok" onclick="confirmRemoveLane()">Remove</button>
+        <button class="session-cancel" onclick="closeRemoveLaneModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1431,10 +1443,34 @@ function addLane() {
 
 function removeLane() {
   if (lanes.length <= 1) { showToast('Must have at least 1 lane'); return; }
-  lanes.pop();
-  renderLanes();
-  showToast('Lane removed');
+  document.getElementById('removeLaneInput').value = '';
+  document.getElementById('removeLaneModal').classList.add('open');
 }
+
+function confirmRemoveLane() {
+  const laneId = parseInt(document.getElementById('removeLaneInput').value, 10);
+  if (!laneId) { showToast('Enter lane number'); return; }
+
+  const laneIdx = lanes.findIndex(l => l.id === laneId);
+  if (laneIdx === -1) { showToast('Lane not found'); return; }
+
+  // Remove the lane
+  lanes.splice(laneIdx, 1);
+
+  // Renumber all lanes starting from 1
+  lanes.forEach((lane, idx) => {
+    lane.id = idx + 1;
+  });
+
+  // Update nextLaneId to be one more than the highest lane number
+  nextLaneId = lanes.length + 1;
+
+  renderLanes();
+  showToast(`Lane ${laneId} removed and lanes renumbered`);
+  closeRemoveLaneModal();
+}
+
+function closeRemoveLaneModal() { document.getElementById('removeLaneModal').classList.remove('open'); }
 
 // Palette drag setup
 document.querySelectorAll('.chip[draggable]').forEach(chip => {

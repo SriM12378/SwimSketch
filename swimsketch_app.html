@@ -71,7 +71,7 @@
     cursor: pointer;
     transition: background 0.15s;
   }
-  .nav-session:hover { background: var(--bg); }
+  .nav-session:hover { background: var(--bg); border: 1px solid var(--border); }
   .nav-gap { flex: 1; }
   .nav-btn {
     background: transparent;
@@ -186,13 +186,34 @@
   }
   .cal-day.today .cal-day-num { color: var(--sprint); }
   .cal-day.empty .cal-day-num { color: transparent; }
-  .cal-practice-tag {
-    font-size: 9px;
-    font-weight: 600;
-    padding: 2px 6px;
-    border-radius: 4px;
+  .cal-day.has-practice {
+    padding: 6px 4px 4px;
+  }
+  .cal-practices {
+    margin-top: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .cal-practice-item {
+    border-radius: 3px;
+    padding: 2px 4px;
     color: #fff;
-    width: fit-content;
+    font-size: 7px;
+    font-weight: 600;
+    line-height: 1.1;
+    text-align: center;
+  }
+  .cal-practice-time {
+    font-size: 8px;
+    font-weight: 700;
+  }
+  .cal-practice-name {
+    font-size: 6px;
+    opacity: 0.9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .cal-dots {
     display: flex;
@@ -1026,7 +1047,6 @@
     <button class="nav-btn active" id="navSets" onclick="showScreen('planner', this)">Sets</button>
     <button class="nav-btn" id="navAssign" onclick="showScreen('assignments', this)">Assignments</button>
     <button class="nav-btn" id="navPresets" onclick="showScreen('presets', this)">Preset</button>
-    <button class="nav-btn" id="navCal" onclick="showScreen('calendar', this)">📅</button>
     <button class="send-btn" onclick="sendToTeam()">▶</button>
   </nav>
 
@@ -1248,6 +1268,38 @@
     </div>
   </div>
 
+  <!-- Practice time modal -->
+  <div class="session-modal" id="practiceTimeModal">
+    <div class="session-card">
+      <h3 id="practiceTimeTitle">Create New Practice</h3>
+      <div style="margin:10px 0;">
+        <label style="display:block;margin-bottom:5px;font-weight:600;">Time:</label>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <select id="practiceHourInput" style="flex: 1; padding:8px;border:1px solid var(--border);border-radius:4px;">
+            <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4" selected>4</option>
+            <option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
+            <option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option>
+          </select>
+          <span>:</span>
+          <select id="practiceMinuteInput" style="flex: 1; padding:8px;border:1px solid var(--border);border-radius:4px;">
+            <option value="00" selected>00</option><option value="15">15</option><option value="30">30</option><option value="45">45</option>
+          </select>
+          <select id="practiceAmPmInput" style="flex: 1; padding:8px;border:1px solid var(--border);border-radius:4px;">
+            <option value="AM">AM</option><option value="PM" selected>PM</option>
+          </select>
+        </div>
+      </div>
+      <div style="margin:10px 0;">
+        <label style="display:block;margin-bottom:5px;font-weight:600;">Name (optional):</label>
+        <input type="text" id="practiceNameInput" placeholder="e.g. Morning Practice" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;"/>
+      </div>
+      <div class="session-btns">
+        <button class="session-ok" onclick="confirmPracticeTime()">Create Practice</button>
+        <button class="session-cancel" onclick="closePracticeTimeModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Load lane modal -->
   <div class="session-modal" id="loadLaneModal">
     <div class="session-card">
@@ -1261,14 +1313,15 @@
     </div>
   </div>
 
-  <!-- Remove lane modal -->
-  <div class="session-modal" id="removeLaneModal">
+  <!-- Practice time modal -->
+  <div class="session-modal" id="practiceTimeModal">
     <div class="session-card">
-      <h3>Remove Lane</h3>
-      <input class="session-input" id="removeLaneInput" placeholder="Lane # to remove" type="number" min="1"/>
+      <h3 id="practiceTimeTitle">Set Practice Time</h3>
+      <input class="session-input" id="practiceTimeInput" type="time" value="16:00"/>
+      <input class="session-input" id="practiceNameInput" placeholder="Practice name (optional)" value=""/>
       <div class="session-btns">
-        <button class="session-ok" onclick="confirmRemoveLane()">Remove</button>
-        <button class="session-cancel" onclick="closeRemoveLaneModal()">Cancel</button>
+        <button class="session-ok" onclick="confirmPracticeTime()">Create Practice</button>
+        <button class="session-cancel" onclick="closePracticeTimeModal()">Cancel</button>
       </div>
     </div>
   </div>
@@ -1346,8 +1399,7 @@ function showScreen(name, btn) {
 
 // ── SESSION NAME ──
 document.getElementById('sessionBtn').addEventListener('click', () => {
-  document.getElementById('sessionInput').value = sessionName;
-  document.getElementById('sessionModal').classList.add('open');
+  showScreen('calendar', null);
 });
 function saveSession() {
   const v = document.getElementById('sessionInput').value.trim();
@@ -1761,7 +1813,62 @@ function closeSavePresetModal() { document.getElementById('savePresetModal').cla
 let calYear = 2026, calMonth = 2; // March 2026
 const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-const practiceDays = { '2026-3-10': 'Sprint', '2026-3-12': 'Technique', '2026-3-15': 'IM', '2026-3-17': 'Aerobic', '2026-3-19': 'Sprint', '2026-3-22': 'Technique' };
+const practiceDays = {
+  '2026-3-10': [
+    { time: '4:00 PM', name: 'Sprint Practice', type: 'Sprint', lanes: [
+      { id:1, swimmers:['Alex R.', 'Jamie L.'], blocks:[{type:'sprint', name:'8×50 Free', sub:'on :50', l:3, w:13},{type:'rest', name:'Rest', sub:'2 min', l:17, w:7},{type:'sprint', name:'8×50 Free', sub:'on :50', l:25, w:13}]},
+      { id:2, swimmers:['Sam K.'], blocks:[{type:'tech', name:'Catch Up', sub:'drill', l:3, w:11},{type:'sprint', name:'8×50 Fly', sub:'Sprint', l:16, w:13},{type:'rest', name:'Rest', sub:'2 min', l:30, w:7}]},
+      { id:3, swimmers:['Casey M.', 'Drew P.'], blocks:[{type:'im', name:'4×100 IM', sub:'on 1:40', l:3, w:17},{type:'rest', name:'Rest', sub:'2 min', l:21, w:7},{type:'im', name:'4×200 IM', sub:'on 3:20', l:29, w:22}]},
+      { id:4, swimmers:['Jordan T.'], blocks:[{type:'aerobic', name:'600 Free', sub:'steady', l:3, w:20},{type:'rest', name:'Rest', sub:'2 min', l:24, w:7},{type:'tech', name:'Legs Only', sub:'8×50 kick', l:32, w:13}]}
+    ] }
+  ],
+  '2026-3-12': [
+    { time: '3:30 PM', name: 'Technique Session', type: 'Technique', lanes: [
+      { id:1, swimmers:['Alex R.', 'Jamie L.'], blocks:[{type:'tech', name:'Catch Up', sub:'drill', l:3, w:11},{type:'tech', name:'One Arm Fly', sub:'drill', l:16, w:11},{type:'rest', name:'Rest', sub:'2 min', l:29, w:7}]},
+      { id:2, swimmers:['Sam K.'], blocks:[{type:'tech', name:'Legs Only', sub:'8×50 kick', l:3, w:13},{type:'tech', name:'Catch Up', sub:'drill', l:18, w:11},{type:'rest', name:'Rest', sub:'2 min', l:31, w:7}]},
+      { id:3, swimmers:['Casey M.', 'Drew P.'], blocks:[{type:'tech', name:'One Arm Fly', sub:'drill', l:3, w:11},{type:'tech', name:'Legs Only', sub:'8×50 kick', l:16, w:13},{type:'rest', name:'Rest', sub:'2 min', l:31, w:7}]},
+      { id:4, swimmers:['Jordan T.'], blocks:[{type:'tech', name:'Catch Up', sub:'drill', l:3, w:11},{type:'tech', name:'One Arm Fly', sub:'drill', l:16, w:11},{type:'rest', name:'Rest', sub:'2 min', l:29, w:7}]}
+    ] }
+  ],
+  '2026-3-15': [
+    { time: '4:00 PM', name: 'IM Practice', type: 'IM', lanes: [
+      { id:1, swimmers:['Alex R.', 'Jamie L.'], blocks:[{type:'im', name:'4×100 IM', sub:'on 1:40', l:3, w:17},{type:'rest', name:'Rest', sub:'2 min', l:21, w:7},{type:'im', name:'4×200 IM', sub:'on 3:20', l:29, w:22}]},
+      { id:2, swimmers:['Sam K.'], blocks:[{type:'im', name:'4×100 IM', sub:'on 1:40', l:3, w:17},{type:'rest', name:'Rest', sub:'2 min', l:21, w:7},{type:'im', name:'4×200 IM', sub:'on 3:20', l:29, w:22}]},
+      { id:3, swimmers:['Casey M.', 'Drew P.'], blocks:[{type:'im', name:'4×100 IM', sub:'on 1:40', l:3, w:17},{type:'rest', name:'Rest', sub:'2 min', l:21, w:7},{type:'im', name:'4×200 IM', sub:'on 3:20', l:29, w:22}]},
+      { id:4, swimmers:['Jordan T.'], blocks:[{type:'im', name:'4×100 IM', sub:'on 1:40', l:3, w:17},{type:'rest', name:'Rest', sub:'2 min', l:21, w:7},{type:'im', name:'4×200 IM', sub:'on 3:20', l:29, w:22}]}
+    ] },
+    { time: '6:00 PM', name: 'Recovery Swim', type: 'Aerobic', lanes: [
+      { id:1, swimmers:['Alex R.', 'Jamie L.'], blocks:[{type:'aerobic', name:'300 Free', sub:'easy', l:3, w:10},{type:'rest', name:'Rest', sub:'1 min', l:14, w:4}]},
+      { id:2, swimmers:['Sam K.'], blocks:[{type:'aerobic', name:'300 Free', sub:'easy', l:3, w:10},{type:'rest', name:'Rest', sub:'1 min', l:14, w:4}]},
+      { id:3, swimmers:['Casey M.', 'Drew P.'], blocks:[{type:'aerobic', name:'300 Free', sub:'easy', l:3, w:10},{type:'rest', name:'Rest', sub:'1 min', l:14, w:4}]},
+      { id:4, swimmers:['Jordan T.'], blocks:[{type:'aerobic', name:'300 Free', sub:'easy', l:3, w:10},{type:'rest', name:'Rest', sub:'1 min', l:14, w:4}]}
+    ] }
+  ],
+  '2026-3-17': [
+    { time: '4:30 PM', name: 'Aerobic Training', type: 'Aerobic', lanes: [
+      { id:1, swimmers:['Alex R.', 'Jamie L.'], blocks:[{type:'aerobic', name:'600 Free', sub:'steady', l:3, w:20},{type:'rest', name:'Rest', sub:'2 min', l:24, w:7}]},
+      { id:2, swimmers:['Sam K.'], blocks:[{type:'aerobic', name:'600 Free', sub:'steady', l:3, w:20},{type:'rest', name:'Rest', sub:'2 min', l:24, w:7}]},
+      { id:3, swimmers:['Casey M.', 'Drew P.'], blocks:[{type:'aerobic', name:'600 Free', sub:'steady', l:3, w:20},{type:'rest', name:'Rest', sub:'2 min', l:24, w:7}]},
+      { id:4, swimmers:['Jordan T.'], blocks:[{type:'aerobic', name:'600 Free', sub:'steady', l:3, w:20},{type:'rest', name:'Rest', sub:'2 min', l:24, w:7}]}
+    ] }
+  ],
+  '2026-3-19': [
+    { time: '5:00 PM', name: 'Sprint Intervals', type: 'Sprint', lanes: [
+      { id:1, swimmers:['Alex R.', 'Jamie L.'], blocks:[{type:'sprint', name:'10×50 Free', sub:'on :45', l:3, w:15},{type:'rest', name:'Rest', sub:'3 min', l:19, w:9}]},
+      { id:2, swimmers:['Sam K.'], blocks:[{type:'sprint', name:'8×50 Fly', sub:'all out', l:3, w:13},{type:'rest', name:'Rest', sub:'2 min', l:17, w:7}]},
+      { id:3, swimmers:['Casey M.', 'Drew P.'], blocks:[{type:'sprint', name:'6×100 Free', sub:'on 1:30', l:3, w:18},{type:'rest', name:'Rest', sub:'2 min', l:22, w:7}]},
+      { id:4, swimmers:['Jordan T.'], blocks:[{type:'sprint', name:'8×50 Back', sub:'Sprint', l:3, w:13},{type:'rest', name:'Rest', sub:'2 min', l:17, w:7}]}
+    ] }
+  ],
+  '2026-3-22': [
+    { time: '3:00 PM', name: 'Technique Drills', type: 'Technique', lanes: [
+      { id:1, swimmers:['Alex R.', 'Jamie L.'], blocks:[{type:'tech', name:'Catch Up', sub:'drill', l:3, w:11},{type:'tech', name:'One Arm Fly', sub:'drill', l:16, w:11},{type:'rest', name:'Rest', sub:'2 min', l:29, w:7}]},
+      { id:2, swimmers:['Sam K.'], blocks:[{type:'tech', name:'Legs Only', sub:'8×50 kick', l:3, w:13},{type:'tech', name:'Catch Up', sub:'drill', l:18, w:11},{type:'rest', name:'Rest', sub:'2 min', l:31, w:7}]},
+      { id:3, swimmers:['Casey M.', 'Drew P.'], blocks:[{type:'tech', name:'One Arm Fly', sub:'drill', l:3, w:11},{type:'tech', name:'Legs Only', sub:'8×50 kick', l:16, w:13},{type:'rest', name:'Rest', sub:'2 min', l:31, w:7}]},
+      { id:4, swimmers:['Jordan T.'], blocks:[{type:'tech', name:'Catch Up', sub:'drill', l:3, w:11},{type:'tech', name:'One Arm Fly', sub:'drill', l:16, w:11},{type:'rest', name:'Rest', sub:'2 min', l:29, w:7}]}
+    ] }
+  ]
+};
 
 function renderCalendar() {
   document.getElementById('calTitle').textContent = `${MONTHS[calMonth]} ${calYear}`;
@@ -1784,16 +1891,23 @@ function renderCalendar() {
   for (let d = 1; d <= daysInMonth; d++) {
     const key = `${calYear}-${calMonth+1}-${d}`;
     const isToday = today.getFullYear()===calYear && today.getMonth()===calMonth && today.getDate()===d;
-    const practice = practiceDays[key];
+    const practices = practiceDays[key] || [];
 
     const cell = document.createElement('div');
-    cell.className = 'cal-day' + (isToday ? ' today' : '') + (practice ? ' has-practice' : '');
+    cell.className = 'cal-day' + (isToday ? ' today' : '') + (practices.length > 0 ? ' has-practice' : '');
     cell.onclick = () => openDay(d, key);
 
     let inner = `<div class="cal-day-num">${d}</div>`;
-    if (practice) {
-      const colors = { Sprint:'#E8432D', Technique:'#D97B2B', Aerobic:'#2B7DD9', IM:'#7C3AED' };
-      inner += `<div class="cal-practice-tag" style="background:${colors[practice]}">${practice}</div>`;
+    if (practices.length > 0) {
+      inner += '<div class="cal-practices">';
+      practices.forEach(practice => {
+        const colors = { Sprint:'#E8432D', Technique:'#D97B2B', Aerobic:'#2B7DD9', IM:'#7C3AED' };
+        inner += `<div class="cal-practice-item" style="background: ${colors[practice.type] || '#9CA3AF'}">
+          <div class="cal-practice-time">${practice.time}</div>
+          <div class="cal-practice-name">${practice.name}</div>
+        </div>`;
+      });
+      inner += '</div>';
     }
     cell.innerHTML = inner;
     grid.appendChild(cell);
@@ -1807,12 +1921,223 @@ function changeMonth(dir) {
   renderCalendar();
 }
 
+let currentDayKey = null;
+let currentDayNum = null;
+let currentEditingPracticeIdx = null;
+
 function openDay(d, key) {
+  const practices = practiceDays[key] || [];
+
+  if (practices.length === 0) {
+    // Create new practice - show time input modal
+    currentDayKey = key;
+    currentDayNum = d;
+    currentEditingPracticeIdx = null;
+    document.getElementById('practiceTimeTitle').textContent = 'Create New Practice';
+    // Set default time to 4:00 PM
+    document.getElementById('practiceHourInput').value = '4';
+    document.getElementById('practiceMinuteInput').value = '00';
+    document.getElementById('practiceAmPmInput').value = 'PM';
+    document.getElementById('practiceNameInput').value = '';
+    document.getElementById('practiceTimeModal').classList.add('open');
+  } else if (practices.length === 1) {
+    // Load single practice or show edit option
+    showSinglePracticeOptions(d, key, practices[0]);
+  } else {
+    // Show practice selection modal
+    showPracticeSelection(d, key, practices);
+  }
+}
+
+function showSinglePracticeOptions(d, key, practice) {
+  const modal = document.createElement('div');
+  modal.className = 'session-modal open';
+  modal.innerHTML = `
+    <div class="session-card" style="width: 350px;">
+      <h3>${practice.name}</h3>
+      <div style="text-align: center; margin: 16px 0; color: var(--muted);">
+        ${practice.time} - ${practice.type}
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <button class="session-ok" onclick="loadPracticeFromOptions('${key}', 0)">Load Practice</button>
+        <button class="session-ok" onclick="editPracticeTime('${key}', 0)">Edit Time/Name</button>
+        <button class="session-ok" onclick="addNewPracticeToDay('${key}', ${d})">Add New Practice</button>
+      </div>
+      <div class="session-btns" style="margin-top: 16px;">
+        <button class="session-cancel" onclick="closeSinglePracticeOptions()">Cancel</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+function loadPracticeFromOptions(key, practiceIdx) {
+  closeSinglePracticeOptions();
+  const practices = practiceDays[key];
+  const practice = practices[practiceIdx];
+  const d = parseInt(key.split('-')[2]);
+  loadPractice(practice, d, key);
+}
+
+function editPracticeTime(key, practiceIdx) {
+  closeSinglePracticeOptions();
+  const practices = practiceDays[key];
+  const practice = practices[practiceIdx];
+  currentDayKey = key;
+  currentEditingPracticeIdx = practiceIdx;
+  
+  // Parse the time (format: "4:00 PM" or "16:00")
+  const timeParts = practice.time.split(' ');
+  let hour, minute, ampm;
+  
+  if (timeParts.length === 2) {
+    // Already in 12-hour format: "4:00 PM"
+    [hour, minute] = timeParts[0].split(':');
+    ampm = timeParts[1];
+  } else {
+    // Convert from 24-hour format: "16:00"
+    const [h, m] = timeParts[0].split(':');
+    const hour24 = parseInt(h);
+    hour = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24;
+    minute = m;
+    ampm = hour24 >= 12 ? 'PM' : 'AM';
+  }
+  
+  document.getElementById('practiceTimeTitle').textContent = 'Edit Practice';
+  document.getElementById('practiceHourInput').value = hour;
+  document.getElementById('practiceMinuteInput').value = minute;
+  document.getElementById('practiceAmPmInput').value = ampm;
+  document.getElementById('practiceNameInput').value = practice.name;
+  document.getElementById('practiceTimeModal').classList.add('open');
+}
+
+function closeSinglePracticeOptions() {
+  const modal = document.querySelector('.session-modal.open');
+  if (modal) modal.remove();
+  // Go back to calendar screen
+  showScreen('calendar', null);
+}
+
+function addNewPracticeToDay(key, d) {
+  closeSinglePracticeOptions();
+  closePracticeSelection();
+  currentDayKey = key;
+  currentDayNum = d;
+  currentEditingPracticeIdx = null;
+  document.getElementById('practiceTimeTitle').textContent = 'Add New Practice';
+  // Set default time to 4:00 PM
+  document.getElementById('practiceHourInput').value = '4';
+  document.getElementById('practiceMinuteInput').value = '00';
+  document.getElementById('practiceAmPmInput').value = 'PM';
+  document.getElementById('practiceNameInput').value = '';
+  document.getElementById('practiceTimeModal').classList.add('open');
+}
+
+function confirmPracticeTime() {
+  const hour = document.getElementById('practiceHourInput').value;
+  const minute = document.getElementById('practiceMinuteInput').value;
+  const ampm = document.getElementById('practiceAmPmInput').value;
+  const time = `${hour}:${minute} ${ampm}`;
+  const name = document.getElementById('practiceNameInput').value.trim() || `Practice at ${time}`;
+  
+  if (!currentDayKey) return;
+  
+  if (!practiceDays[currentDayKey]) {
+    practiceDays[currentDayKey] = [];
+  }
+  
+  const practice = {
+    time: time,
+    name: name,
+    type: 'Custom', // Default type for new practices
+    lanes: [
+      { id:1, swimmers:[], blocks:[] },
+      { id:2, swimmers:[], blocks:[] },
+      { id:3, swimmers:[], blocks:[] },
+      { id:4, swimmers:[], blocks:[] }
+    ]
+  };
+  
+  // If editing existing practice
+  if (currentEditingPracticeIdx !== null && currentEditingPracticeIdx !== undefined) {
+    practiceDays[currentDayKey][currentEditingPracticeIdx] = {
+      ...practiceDays[currentDayKey][currentEditingPracticeIdx],
+      time: time,
+      name: name
+    };
+    currentEditingPracticeIdx = null;
+    renderCalendar();
+    closePracticeTimeModal();
+    showToast('Practice updated');
+    return;
+  }
+  
+  // Adding new practice
+  const selectedDay = currentDayNum;
+  practiceDays[currentDayKey].push(practice);
+  renderCalendar();
+  closePracticeTimeModal();
+
+  // Auto-load the new practice (use saved day before reset)
+  loadPractice(practice, selectedDay, currentDayKey);
+}
+
+function closePracticeTimeModal() {
+  document.getElementById('practiceTimeModal').classList.remove('open');
+  currentDayKey = null;
+  currentDayNum = null;
+  currentEditingPracticeIdx = null;
+  // Go back to calendar screen
+  showScreen('calendar', null);
+}
+
+function loadPractice(practice, d, key) {
   const month = MONTHS[calMonth];
-  sessionName = `${['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date(calYear,calMonth,d).getDay()]} ${month} ${d}`;
+  const dayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date(calYear,calMonth,d).getDay()];
+  sessionName = `${dayName} ${month} ${d} - ${practice.time}`;
   document.getElementById('sessionBtn').textContent = sessionName;
+  lanes = JSON.parse(JSON.stringify(practice.lanes));
+  renderLanes();
   showScreen('planner', document.getElementById('navSets'));
-  showToast(`Opened ${sessionName}`);
+  showToast(`Loaded "${practice.name}"`);
+}
+
+function showPracticeSelection(d, key, practices) {
+  const modal = document.createElement('div');
+  modal.className = 'session-modal open';
+  modal.innerHTML = `
+    <div class="session-card" style="width: 400px;">
+      <h3>Select Practice</h3>
+      <div style="display: flex; flex-direction: column; gap: 8px; margin: 16px 0;">
+        ${practices.map((practice, idx) => `
+          <button class="session-ok" style="margin: 0;" onclick="selectPractice(${d}, '${key}', ${idx})">
+            ${practice.time} - ${practice.name} (${practice.type})
+          </button>
+        `).join('')}
+        <button class="session-ok" style="margin: 0; background: var(--sprint); color: white;" onclick="addNewPracticeToDay('${key}', ${d})">
+          + Add New Practice
+        </button>
+      </div>
+      <div class="session-btns">
+        <button class="session-cancel" onclick="closePracticeSelection()">Cancel</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+function selectPractice(d, key, practiceIdx) {
+  const practices = practiceDays[key];
+  const practice = practices[practiceIdx];
+  closePracticeSelection();
+  loadPractice(practice, d, key);
+}
+
+function closePracticeSelection() {
+  const modal = document.querySelector('.session-modal.open');
+  if (modal) modal.remove();
+  // Go back to calendar screen
+  showScreen('calendar', null);
 }
 
 // ── TRIANGLE DIAL ──

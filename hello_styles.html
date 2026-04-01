@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hello World Style Guide</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #F4F1EB;
+      --surface: #FFFEF9;
+      --ink: #1A1917;
+      --muted: #6B6760;
+      --border: #C8C4B8;
+      --sprint: #E8432D;
+      --tech: #D97B2B;
+      --aerobic: #2B7DD9;
+      --im: #7C3AED;
+      --rest: #9CA3AF;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ipad-demo {
+      width: 1024px;
+      max-width: 100%;
+      background: var(--surface);
+      border-radius: 20px;
+      box-shadow: 0 16px 36px rgba(0,0,0,0.25);
+      border: 1px solid var(--border);
+      padding: 24px;
+    }
+
+    h1 {
+      font-family: 'Space Mono', monospace;
+      font-size: 30px;
+      margin-bottom: 16px;
+    }
+
+    h2 { margin-top: 28px; margin-bottom: 12px; font-size: 20px; }
+
+    .font-samples, .color-tiles, .icon-samples {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+
+    .tile {
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      min-height: 86px;
+      overflow: hidden;
+    }
+
+    .color-block {
+      height: 80px;
+      border-radius: 10px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      padding: 8px;
+      color: #fff;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+    }
+
+    .font-label { font-size: 11px; color: var(--muted); margin-top: 6px; }
+    .icon-box {
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 56px 1fr;
+      gap: 10px;
+      align-items: center;
+      background: #fff;
+    }
+
+    .icon-preview {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      background: var(--sprint);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 20px;
+    }
+
+    .icon-meta strong { display: block; margin-bottom: 4px; }
+
+    p { margin: 2px 0; }
+  </style>
+</head>
+<body>
+  <main class="ipad-demo">
+    <h1>Hello Styles</h1>
+    <p style="color: var(--muted);">One example of each font, color, and icon from SwimSketch styles.</p>
+
+    <h2>Font Samples</h2>
+    <div class="font-samples">
+      <div class="tile">
+        <div style="font-family:'DM Sans', sans-serif; font-weight:300; font-size: 18px;">DM Sans Light</div>
+        <div class="font-label">weight 300</div>
+      </div>
+      <div class="tile">
+        <div style="font-family:'DM Sans', sans-serif; font-weight:400; font-size: 18px;">DM Sans Regular</div>
+        <div class="font-label">weight 400</div>
+      </div>
+      <div class="tile">
+        <div style="font-family:'DM Sans', sans-serif; font-weight:700; font-size: 18px;">DM Sans Bold</div>
+        <div class="font-label">weight 700</div>
+      </div>
+      <div class="tile">
+        <div style="font-family:'Space Mono', monospace; font-weight:400; font-size: 18px;">Space Mono Regular</div>
+        <div class="font-label">mono</div>
+      </div>
+      <div class="tile">
+        <div style="font-family:'Space Mono', monospace; font-weight:700; font-size: 18px;">Space Mono Bold</div>
+        <div class="font-label">mono</div>
+      </div>
+    </div>
+
+    <h2>Color Tiles</h2>
+    <div class="color-tiles">
+      <div class="color-block" style="background: var(--sprint);">Sprint<br>#E8432D</div>
+      <div class="color-block" style="background: var(--tech);">Technique<br>#D97B2B</div>
+      <div class="color-block" style="background: var(--aerobic);">Aerobic<br>#2B7DD9</div>
+      <div class="color-block" style="background: var(--im);">IM<br>#7C3AED</div>
+      <div class="color-block" style="background: var(--rest);">Rest<br>#9CA3AF</div>
+      <div class="color-block" style="background: var(--ink);">Ink<br>#1A1917</div>
+      <div class="color-block" style="background: var(--surface); color: var(--ink); border: 1px solid var(--border);">Surface<br>#FFFEF9</div>
+      <div class="color-block" style="background: var(--bg); color: var(--ink); border: 1px solid var(--border);">Background<br>#F4F1EB</div>
+    </div>
+
+    <h2>Icon / UI Samples</h2>
+    <div class="icon-samples">
+      <div class="icon-box">
+        <div class="icon-preview">▶</div>
+        <div class="icon-meta"><strong>Play icon</strong><p>Used in SwimSketch send button</p></div>
+      </div>
+      <div class="icon-box">
+        <div class="icon-preview" style="background: var(--ink);">✕</div>
+        <div class="icon-meta"><strong>Close icon</strong><p>Used in modal close button</p></div>
+      </div>
+      <div class="icon-box">
+        <div class="icon-preview" style="background: var(--aerobic);">+</div>
+        <div class="icon-meta"><strong>Add icon</strong><p>Used in lane add and palette add</p></div>
+      </div>
+      <div class="icon-box">
+        <div class="icon-preview" style="background: var(--tech);">☰</div>
+        <div class="icon-meta"><strong>Menu icon</strong><p>Stand-in for navigation icons</p></div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

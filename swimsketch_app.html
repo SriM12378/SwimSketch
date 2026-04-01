@@ -1,0 +1,1615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SwimSketch</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F4F1EB;
+    --surface: #FFFEF9;
+    --ink: #1A1917;
+    --muted: #6B6760;
+    --border: #C8C4B8;
+    --grid: #E2DFD6;
+    --sprint: #E8432D;
+    --sprint-light: #FDE8E5;
+    --tech: #D97B2B;
+    --tech-light: #FDF0E0;
+    --aerobic: #2B7DD9;
+    --aerobic-light: #E0EDFB;
+    --im: #7C3AED;
+    --im-light: #EDE9FE;
+    --rest: #9CA3AF;
+    --rest-light: #F3F4F6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #222;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  /* iPad frame */
+  .ipad {
+    width: 1024px;
+    height: 768px;
+    background: var(--surface);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* ── NAV ── */
+  .nav {
+    background: var(--ink);
+    height: 56px;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 12px;
+    flex-shrink: 0;
+    z-index: 50;
+  }
+  .nav-session {
+    background: var(--surface);
+    border: none;
+    border-radius: 8px;
+    padding: 7px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .nav-session:hover { background: var(--bg); }
+  .nav-gap { flex: 1; }
+  .nav-btn {
+    background: transparent;
+    border: 1.5px solid rgba(255,255,255,0.3);
+    border-radius: 8px;
+    padding: 7px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .nav-btn:hover, .nav-btn.active { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.6); }
+  .nav-btn.active { border-color: var(--sprint); color: var(--sprint); }
+  .send-btn {
+    background: var(--sprint);
+    border: none;
+    border-radius: 8px;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s;
+    font-size: 14px;
+  }
+  .send-btn:hover { background: #c4381e; }
+
+  /* ── SCREENS ── */
+  .screen { display: none; flex: 1; overflow: hidden; }
+  .screen.active { display: flex; }
+
+  /* ════════════════════════════════
+     CALENDAR SCREEN
+  ════════════════════════════════ */
+  .calendar-screen {
+    flex-direction: column;
+    background: var(--bg);
+    padding: 24px;
+    gap: 20px;
+    overflow-y: auto;
+  }
+  .cal-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .cal-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ink);
+    flex: 1;
+  }
+  .cal-nav-btn {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--ink);
+    transition: all 0.12s;
+  }
+  .cal-nav-btn:hover { background: var(--ink); color: #fff; }
+  .cal-grid-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .cal-day-name {
+    text-align: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 4px 0;
+  }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+  }
+  .cal-day {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 8px;
+    min-height: 80px;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .cal-day:hover { border-color: var(--ink); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+  .cal-day.empty { background: transparent; border-color: transparent; cursor: default; }
+  .cal-day.empty:hover { transform: none; box-shadow: none; }
+  .cal-day.today { border-color: var(--sprint); border-width: 2px; }
+  .cal-day.has-practice { background: var(--surface); }
+  .cal-day-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .cal-day.today .cal-day-num { color: var(--sprint); }
+  .cal-day.empty .cal-day-num { color: transparent; }
+  .cal-practice-tag {
+    font-size: 9px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #fff;
+    width: fit-content;
+  }
+  .cal-dots {
+    display: flex;
+    gap: 3px;
+    flex-wrap: wrap;
+  }
+  .cal-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+  }
+
+  /* ════════════════════════════════
+     MAIN PLANNER SCREEN
+  ════════════════════════════════ */
+  .planner-screen { flex-direction: row; }
+
+  /* Left palette */
+  .palette {
+    width: 180px;
+    flex-shrink: 0;
+    background: var(--bg);
+    border-right: 1.5px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    position: relative;
+  }
+  .pal-section { padding: 10px 10px 4px; }
+  .pal-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .chip {
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-bottom: 5px;
+    cursor: grab;
+    border: 1.5px solid transparent;
+    transition: all 0.12s;
+    user-select: none;
+  }
+  .chip:active { cursor: grabbing; }
+  .chip:hover { transform: translateX(2px); border-color: var(--ink); }
+  .chip.sprint  { background: var(--sprint-light); border-color: #F5C4BE; }
+  .chip.tech    { background: var(--tech-light);   border-color: #F0D8B0; }
+  .chip.aerobic { background: var(--aerobic-light); border-color: #B8D4F5; }
+  .chip.im      { background: var(--im-light);     border-color: #C9BEF8; }
+  .chip.rest    { background: var(--rest-light);   border-color: #D1D5DB; }
+  .chip-name { font-size: 11px; font-weight: 700; color: var(--ink); line-height: 1.2; }
+  .chip-sub  { font-size: 9px; color: var(--muted); margin-top: 1px; }
+  .chip-stats { font-size: 8px; color: var(--muted); margin-top: 2px; font-style: italic; }
+  .chip-pill {
+    display: inline-block;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 20px;
+    margin-top: 4px;
+    color: #fff;
+  }
+  .chip.sprint  .chip-pill { background: var(--sprint); }
+  .chip.tech    .chip-pill { background: var(--tech); }
+  .chip.aerobic .chip-pill { background: var(--aerobic); }
+  .chip.im      .chip-pill { background: var(--im); }
+  .chip.rest    .chip-pill { background: var(--rest); }
+
+  .pal-divider { height: 1px; background: var(--border); margin: 4px 10px 8px; }
+  .pal-footer { padding: 10px; margin-top: auto; border-top: 1px solid var(--border); }
+  .add-custom-btn {
+    width: 100%;
+    padding: 9px 0;
+    border-radius: 8px;
+    border: 1.5px dashed var(--border);
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .add-custom-btn:hover { background: var(--surface); border-color: var(--ink); color: var(--ink); }
+
+  /* Custom modal inside palette */
+  .custom-modal {
+    position: absolute;
+    inset: 0;
+    background: var(--bg);
+    z-index: 10;
+    display: none;
+    flex-direction: column;
+  }
+  .custom-modal.open { display: flex; }
+  .modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .modal-head span {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--ink);
+    font-weight: 700;
+  }
+  .modal-x {
+    background: transparent;
+    border: 1.5px solid var(--border);
+    border-radius: 50%;
+    width: 22px; height: 22px;
+    font-size: 11px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted);
+    transition: all 0.12s;
+  }
+  .modal-x:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .modal-body { padding: 12px; display: flex; flex-direction: column; gap: 10px; flex: 1; overflow-y: auto; }
+  .f-label { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .f-input {
+    width: 100%;
+    padding: 7px 9px;
+    border-radius: 6px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    color: var(--ink);
+    outline: none;
+  }
+  .f-input:focus { border-color: var(--ink); }
+  .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .type-opt {
+    padding: 6px 4px;
+    border-radius: 6px;
+    border: 1.5px solid transparent;
+    font-size: 9px;
+    font-weight: 700;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .type-opt.sprint  { background: var(--sprint-light);  color: var(--sprint);  border-color: #F5C4BE; }
+  .type-opt.tech    { background: var(--tech-light);    color: var(--tech);    border-color: #F0D8B0; }
+  .type-opt.aerobic { background: var(--aerobic-light); color: var(--aerobic); border-color: #B8D4F5; }
+  .type-opt.im      { background: var(--im-light);      color: var(--im);      border-color: #C9BEF8; }
+  .type-opt.sel { border-width: 2px; transform: scale(1.04); }
+  .type-opt.sprint.sel  { border-color: var(--sprint); }
+  .type-opt.tech.sel    { border-color: var(--tech); }
+  .type-opt.aerobic.sel { border-color: var(--aerobic); }
+  .type-opt.im.sel      { border-color: var(--im); }
+  .modal-foot { padding: 10px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 5px; }
+  .save-btn {
+    width: 100%; padding: 9px 0; border-radius: 7px; border: none;
+    background: var(--ink); color: var(--surface);
+    font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 700; cursor: pointer;
+    transition: background 0.12s;
+  }
+  .save-btn:hover { background: var(--sprint); }
+  .cancel-btn {
+    width: 100%; padding: 7px 0; border-radius: 7px;
+    border: 1.5px solid var(--border); background: transparent;
+    font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500;
+    color: var(--muted); cursor: pointer; transition: all 0.12s;
+  }
+  .cancel-btn:hover { border-color: var(--ink); color: var(--ink); }
+
+  /* Center planner */
+  .planner-center {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    border-right: 1.5px solid var(--border);
+  }
+
+  .lanes-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .lane-row {
+    flex: 1;
+    display: flex;
+    align-items: stretch;
+    border-bottom: 1.5px solid var(--grid);
+    min-height: 0;
+    transition: background 0.12s;
+  }
+  .lane-row.drag-over { background: rgba(232,67,45,0.04); }
+  .lane-label {
+    width: 64px;
+    flex-shrink: 0;
+    border-right: 1.5px solid var(--border);
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 4px;
+  }
+  .lane-num {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 2px solid var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 14px; font-weight: 700; color: var(--ink);
+  }
+  .lane-swimmers {
+    font-size: 7px;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.3;
+    max-width: 56px;
+    overflow: hidden;
+  }
+  .lane-track {
+    flex: 1;
+    position: relative;
+    background: var(--surface);
+  }
+  .swim-block {
+    position: absolute;
+    top: 6px; bottom: 6px;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3px 6px;
+    overflow: hidden;
+    cursor: grab;
+    user-select: none;
+    transition: box-shadow 0.12s, transform 0.12s;
+  }
+  .swim-block:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+  .swim-block:active { cursor: grabbing; }
+  .swim-block.sprint  { background: var(--sprint); }
+  .swim-block.tech    { background: var(--tech); }
+  .swim-block.aerobic { background: var(--aerobic); }
+  .swim-block.im      { background: var(--im); }
+  .swim-block.rest    { background: var(--rest-light); border: 1.5px dashed var(--border); }
+  .b-name { font-size: 10px; font-weight: 700; color: #fff; text-align: center; line-height: 1.2; white-space: nowrap; }
+  .b-sub  { font-size: 8px; color: rgba(255,255,255,0.8); }
+  .swim-block.rest .b-name { color: var(--muted); }
+  .swim-block.rest .b-sub  { color: var(--muted); }
+
+  /* Remove block button */
+  .block-remove {
+    position: absolute;
+    top: 2px; right: 2px;
+    width: 14px; height: 14px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    color: #fff;
+    cursor: pointer;
+    line-height: 1;
+  }
+  .swim-block:hover .block-remove { display: flex; }
+
+  /* Add/remove lane buttons */
+  .lane-actions {
+    height: 36px;
+    background: var(--bg);
+    border-top: 1.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .lane-action-btn {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 6px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--ink);
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .lane-action-btn:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .lane-action-btn.danger:hover { background: var(--sprint); border-color: var(--sprint); }
+
+  /* Triangle bottom bar */
+  .triangle-bar {
+    height: 110px;
+    background: var(--bg);
+    border-top: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 20px;
+    flex-shrink: 0;
+  }
+  .tri-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  canvas#triCanvas { cursor: crosshair; }
+  .tri-readout {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+  }
+  .tri-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    min-width: 64px;
+  }
+  .tri-pct {
+    font-size: 20px;
+    font-weight: 700;
+    font-family: 'Space Mono', monospace;
+    line-height: 1;
+  }
+  .tri-bar-wrap {
+    width: 100%;
+    height: 3px;
+    background: var(--grid);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .tri-bar { height: 100%; border-radius: 2px; transition: width 0.1s; }
+  .tri-stat-label {
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* Right panel */
+  .right-panel {
+    width: 110px;
+    flex-shrink: 0;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+  }
+  .rp-header {
+    padding: 12px 10px 10px;
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+  .rp-lanes { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
+  .rp-lane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--grid);
+  }
+  .rp-lane-label { font-size: 9px; font-weight: 600; color: var(--muted); }
+  .cp-btn {
+    width: 100%;
+    padding: 6px 0;
+    border-radius: 6px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--ink);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.12s;
+  }
+  .cp-btn:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .cp-btn.copy-active { background: var(--aerobic); color: #fff; border-color: var(--aerobic); }
+
+  /* ════════════════════════════════
+     ASSIGNMENTS SCREEN
+  ════════════════════════════════ */
+  .assignments-screen {
+    flex-direction: column;
+    background: var(--bg);
+    padding: 20px;
+    gap: 16px;
+    overflow-y: auto;
+  }
+  .assign-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .assign-subtitle {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .assign-lanes {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .assign-lane-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .assign-lane-num {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: 2px solid var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 18px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .assign-lane-body { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+  .assign-lane-label { font-size: 11px; font-weight: 700; color: var(--ink); }
+  .assign-swimmers { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .swimmer-tag {
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .swimmer-remove {
+    width: 14px; height: 14px;
+    background: var(--border);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; cursor: pointer; color: var(--muted);
+    transition: all 0.12s;
+  }
+  .swimmer-remove:hover { background: var(--sprint); color: #fff; }
+  .add-swimmer-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .add-swimmer-input {
+    flex: 1;
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    color: var(--ink);
+    outline: none;
+  }
+  .add-swimmer-input:focus { border-color: var(--ink); }
+  .add-swimmer-btn {
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: none;
+    background: var(--ink);
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .add-swimmer-btn:hover { background: var(--sprint); }
+
+  /* ════════════════════════════════
+     PRESETS SCREEN
+  ════════════════════════════════ */
+  .presets-screen {
+    flex-direction: column;
+    background: var(--bg);
+    padding: 20px;
+    gap: 16px;
+    overflow-y: auto;
+  }
+  .presets-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .presets-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink);
+    flex: 1;
+  }
+  .new-preset-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    background: var(--ink);
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .new-preset-btn:hover { background: var(--sprint); }
+  .presets-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .preset-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+  }
+  .preset-card:hover { border-color: var(--ink); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.1); }
+  .preset-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .preset-meta {
+    font-size: 10px;
+    color: var(--muted);
+  }
+  .preset-dots {
+    display: flex;
+    gap: 3px;
+  }
+  .preset-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+  }
+  .preset-actions {
+    display: flex;
+    gap: 5px;
+    margin-top: auto;
+  }
+  .preset-load-btn {
+    flex: 1;
+    padding: 6px 0;
+    border-radius: 6px;
+    border: none;
+    background: var(--ink);
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.12s;
+    text-align: center;
+  }
+  .preset-load-btn:hover { background: var(--aerobic); }
+  .preset-del-btn {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .preset-del-btn:hover { background: var(--sprint); color: #fff; border-color: var(--sprint); }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: var(--ink);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 9999;
+    pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* Sent overlay */
+  .sent-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(26,25,23,0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    border-radius: 20px;
+  }
+  .sent-overlay.show { display: flex; }
+  .sent-card {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 32px 40px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .sent-icon {
+    width: 56px; height: 56px;
+    background: var(--sprint);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+  }
+  .sent-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .sent-sub { font-size: 13px; color: var(--muted); }
+  .sent-close {
+    margin-top: 8px;
+    padding: 10px 24px;
+    border-radius: 8px;
+    border: none;
+    background: var(--ink);
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .sent-close:hover { background: var(--sprint); }
+
+  /* Legend */
+  .legend {
+    height: 34px;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+  .leg-item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--muted); font-weight: 500; }
+  .leg-dot { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+
+  /* Calendar modal for session name */
+  .session-modal {
+    position: absolute;
+    inset: 0;
+    background: rgba(26,25,23,0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 300;
+    border-radius: 20px;
+  }
+  .session-modal.open { display: flex; }
+  .session-card {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 24px;
+    width: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .session-card h3 {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .session-input {
+    width: 100%;
+    padding: 9px 12px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--ink);
+    outline: none;
+  }
+  .session-input:focus { border-color: var(--ink); }
+  .session-btns { display: flex; gap: 8px; }
+  .session-ok {
+    flex: 1; padding: 9px 0; border-radius: 7px; border: none;
+    background: var(--ink); color: #fff;
+    font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer;
+  }
+  .session-ok:hover { background: var(--sprint); }
+  .session-cancel {
+    padding: 9px 16px; border-radius: 7px;
+    border: 1.5px solid var(--border); background: transparent;
+    font-family: 'DM Sans', sans-serif; font-size: 12px; color: var(--muted); cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="ipad" id="ipad">
+
+  <!-- NAV -->
+  <nav class="nav">
+    <button class="nav-session" id="sessionBtn">Tuesday 4:00 – 5:30 pm</button>
+    <div class="nav-gap"></div>
+    <button class="nav-btn active" id="navSets" onclick="showScreen('planner', this)">Sets</button>
+    <button class="nav-btn" id="navAssign" onclick="showScreen('assignments', this)">Assignments</button>
+    <button class="nav-btn" id="navPresets" onclick="showScreen('presets', this)">Preset</button>
+    <button class="nav-btn" id="navCal" onclick="showScreen('calendar', this)">📅</button>
+    <button class="send-btn" onclick="sendToTeam()">▶</button>
+  </nav>
+
+  <!-- ── CALENDAR SCREEN ── -->
+  <div class="screen calendar-screen" id="screen-calendar">
+    <div class="cal-header">
+      <button class="cal-nav-btn" onclick="changeMonth(-1)">← Prev</button>
+      <div class="cal-title" id="calTitle"></div>
+      <button class="cal-nav-btn" onclick="changeMonth(1)">Next →</button>
+    </div>
+    <div class="cal-grid-header" id="calDayNames"></div>
+    <div class="cal-grid" id="calGrid"></div>
+  </div>
+
+  <!-- ── PLANNER SCREEN ── -->
+  <div class="screen planner-screen active" id="screen-planner">
+
+    <!-- Left Palette -->
+    <aside class="palette" id="palette">
+      <div class="pal-section">
+        <div class="pal-label">Sprint</div>
+        <div class="chip sprint" draggable="true" data-type="sprint" data-name="8×50 Free" data-sub="on :50" data-stats="400 yds · High intensity" data-w="13">
+          <div class="chip-name">8×50 Free</div>
+          <div class="chip-sub">on :50</div>
+          <div class="chip-stats">400 yds · High intensity</div>
+          <div class="chip-pill">Sprint</div>
+        </div>
+        <div class="chip sprint" draggable="true" data-type="sprint" data-name="8×50 Fly" data-sub="Sprint" data-stats="400 yds · Max effort" data-w="13">
+          <div class="chip-name">8×50 Fly</div>
+          <div class="chip-sub">Sprint</div>
+          <div class="chip-stats">400 yds · Max effort</div>
+          <div class="chip-pill">Sprint</div>
+        </div>
+      </div>
+      <div class="pal-divider"></div>
+      <div class="pal-section">
+        <div class="pal-label">Technique</div>
+        <div class="chip tech" draggable="true" data-type="tech" data-name="Catch Up" data-sub="drill" data-stats="Freestyle · Low intensity" data-w="11">
+          <div class="chip-name">Catch Up</div>
+          <div class="chip-sub">drill</div>
+          <div class="chip-stats">Freestyle · Low intensity</div>
+          <div class="chip-pill">Technique</div>
+        </div>
+        <div class="chip tech" draggable="true" data-type="tech" data-name="Legs Only" data-sub="8×50 kick" data-stats="400 yds · Low intensity" data-w="13">
+          <div class="chip-name">Legs Only</div>
+          <div class="chip-sub">8×50 kick</div>
+          <div class="chip-stats">400 yds · Low intensity</div>
+          <div class="chip-pill">Technique</div>
+        </div>
+        <div class="chip tech" draggable="true" data-type="tech" data-name="One Arm Fly" data-sub="drill" data-stats="Butterfly · Low intensity" data-w="11">
+          <div class="chip-name">One Arm Fly</div>
+          <div class="chip-sub">drill</div>
+          <div class="chip-stats">Butterfly · Low intensity</div>
+          <div class="chip-pill">Technique</div>
+        </div>
+      </div>
+      <div class="pal-divider"></div>
+      <div class="pal-section">
+        <div class="pal-label">IM</div>
+        <div class="chip im" draggable="true" data-type="im" data-name="4×100 IM" data-sub="on 1:40" data-stats="400 yds · Med intensity" data-w="17">
+          <div class="chip-name">4×100 IM</div>
+          <div class="chip-sub">on 1:40</div>
+          <div class="chip-stats">400 yds · Med intensity</div>
+          <div class="chip-pill">IM</div>
+        </div>
+        <div class="chip im" draggable="true" data-type="im" data-name="4×200 IM" data-sub="on 3:20" data-stats="800 yds · Med intensity" data-w="22">
+          <div class="chip-name">4×200 IM</div>
+          <div class="chip-sub">on 3:20</div>
+          <div class="chip-stats">800 yds · Med intensity</div>
+          <div class="chip-pill">IM</div>
+        </div>
+      </div>
+      <div class="pal-divider"></div>
+      <div class="pal-section">
+        <div class="pal-label">Aerobic</div>
+        <div class="chip aerobic" draggable="true" data-type="aerobic" data-name="600 Free" data-sub="steady" data-stats="600 yds · Moderate" data-w="20">
+          <div class="chip-name">600 Free</div>
+          <div class="chip-sub">steady</div>
+          <div class="chip-stats">600 yds · Moderate</div>
+          <div class="chip-pill">Aerobic</div>
+        </div>
+      </div>
+      <div class="pal-divider"></div>
+      <div class="pal-section">
+        <div class="pal-label">Rest</div>
+        <div class="chip rest" draggable="true" data-type="rest" data-name="Rest" data-sub="2 min" data-stats="Recovery" data-w="7">
+          <div class="chip-name">Rest</div>
+          <div class="chip-sub">2 min</div>
+          <div class="chip-stats">Recovery</div>
+          <div class="chip-pill">Rest</div>
+        </div>
+      </div>
+      <div class="pal-footer">
+        <button class="add-custom-btn" onclick="openCustomModal()">+ Add Custom</button>
+      </div>
+
+      <!-- Custom modal -->
+      <div class="custom-modal" id="customModal">
+        <div class="modal-head">
+          <span>New Set</span>
+          <button class="modal-x" onclick="closeCustomModal()">✕</button>
+        </div>
+        <div class="modal-body">
+          <div>
+            <div class="f-label">Set Name</div>
+            <input class="f-input" id="cName" placeholder="e.g. 6×75 Free" maxlength="20"/>
+          </div>
+          <div>
+            <div class="f-label">Details</div>
+            <input class="f-input" id="cSub" placeholder="e.g. on 1:10" maxlength="16"/>
+          </div>
+          <div>
+            <div class="f-label">Stats</div>
+            <input class="f-input" id="cStats" placeholder="e.g. 450 yds · High" maxlength="24"/>
+          </div>
+          <div>
+            <div class="f-label">Type</div>
+            <div class="type-grid">
+              <div class="type-opt sprint sel" onclick="selType(this,'sprint')">Sprint</div>
+              <div class="type-opt tech" onclick="selType(this,'tech')">Technique</div>
+              <div class="type-opt aerobic" onclick="selType(this,'aerobic')">Aerobic</div>
+              <div class="type-opt im" onclick="selType(this,'im')">IM</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="save-btn" onclick="saveCustom()">Add to Palette</button>
+          <button class="cancel-btn" onclick="closeCustomModal()">Cancel</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Center -->
+    <div class="planner-center">
+      <div class="lanes-area" id="lanesArea"></div>
+      <div class="lane-actions">
+        <span style="font-size:10px;color:var(--muted);font-weight:600;">Lanes:</span>
+        <button class="lane-action-btn" onclick="addLane()">+ Add Lane</button>
+        <button class="lane-action-btn danger" onclick="removeLane()">− Remove Lane</button>
+      </div>
+      <div class="triangle-bar">
+        <div class="tri-label">Practice<br>Balance</div>
+        <canvas id="triCanvas" width="100" height="90"></canvas>
+        <div class="tri-readout" id="triReadout"></div>
+      </div>
+      <div class="legend">
+        <div class="leg-item"><div class="leg-dot" style="background:var(--sprint)"></div>Sprint</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--tech)"></div>Technique</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--aerobic)"></div>Aerobic</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--im)"></div>IM</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--rest-light);border:1px dashed var(--border)"></div>Rest</div>
+      </div>
+    </div>
+
+    <!-- Right panel -->
+    <aside class="right-panel">
+      <div class="rp-header">Lanes</div>
+      <div class="rp-lanes" id="rpLanes"></div>
+    </aside>
+  </div>
+
+  <!-- ── ASSIGNMENTS SCREEN ── -->
+  <div class="screen assignments-screen" id="screen-assignments">
+    <div>
+      <div class="assign-title">Lane Assignments</div>
+      <div class="assign-subtitle">Assign swimmers to each lane for this session</div>
+    </div>
+    <div class="assign-lanes" id="assignLanes"></div>
+  </div>
+
+  <!-- ── PRESETS SCREEN ── -->
+  <div class="screen presets-screen" id="screen-presets">
+    <div class="presets-header">
+      <div class="presets-title">Practice Presets</div>
+      <button class="new-preset-btn" onclick="saveAsPreset()">Save Current as Preset</button>
+    </div>
+    <div class="presets-grid" id="presetsGrid"></div>
+  </div>
+
+  <!-- Sent overlay -->
+  <div class="sent-overlay" id="sentOverlay">
+    <div class="sent-card">
+      <div class="sent-icon">▶</div>
+      <div class="sent-title">Sent!</div>
+      <div class="sent-sub" id="sentSub">Practice sent to all swimmers</div>
+      <button class="sent-close" onclick="closeSent()">Done</button>
+    </div>
+  </div>
+
+  <!-- Session name modal -->
+  <div class="session-modal" id="sessionModal">
+    <div class="session-card">
+      <h3>Edit Session</h3>
+      <input class="session-input" id="sessionInput" placeholder="e.g. Tuesday 4:00 – 5:30 pm"/>
+      <div class="session-btns">
+        <button class="session-ok" onclick="saveSession()">Save</button>
+        <button class="session-cancel" onclick="closeSessionModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ──
+let lanes = [
+  { id:1, swimmers:['Alex R.', 'Jamie L.'], blocks:[
+    {type:'sprint', name:'8×50 Free', sub:'on :50', l:3, w:13},
+    {type:'rest', name:'Rest', sub:'2 min', l:17, w:7},
+    {type:'sprint', name:'8×50 Free', sub:'on :50', l:25, w:13},
+  ]},
+  { id:2, swimmers:['Sam K.'], blocks:[
+    {type:'tech', name:'Catch Up', sub:'drill', l:3, w:11},
+    {type:'sprint', name:'8×50 Fly', sub:'Sprint', l:16, w:13},
+    {type:'rest', name:'Rest', sub:'2 min', l:30, w:7},
+  ]},
+  { id:3, swimmers:['Casey M.', 'Drew P.'], blocks:[
+    {type:'im', name:'4×100 IM', sub:'on 1:40', l:3, w:17},
+    {type:'rest', name:'Rest', sub:'2 min', l:21, w:7},
+    {type:'im', name:'4×200 IM', sub:'on 3:20', l:29, w:22},
+  ]},
+  { id:4, swimmers:['Jordan T.'], blocks:[
+    {type:'aerobic', name:'600 Free', sub:'steady', l:3, w:20},
+    {type:'rest', name:'Rest', sub:'2 min', l:24, w:7},
+    {type:'tech', name:'Legs Only', sub:'8×50 kick', l:32, w:13},
+  ]},
+];
+let nextLaneId = 5;
+let clipboard = null;
+let customType = 'sprint';
+let sessionName = 'Tuesday 4:00 – 5:30 pm';
+
+let presets = [
+  { id:1, name:'Sprint Heavy', meta:'High intensity · 90 min', dots:['#E8432D','#E8432D','#D97B2B','#9CA3AF'] },
+  { id:2, name:'Technique Focus', meta:'Drill-heavy · 75 min', dots:['#D97B2B','#D97B2B','#9CA3AF','#9CA3AF'] },
+  { id:3, name:'Aerobic Base', meta:'Steady state · 90 min', dots:['#2B7DD9','#2B7DD9','#2B7DD9','#9CA3AF'] },
+  { id:4, name:'IM Builder', meta:'All strokes · 90 min', dots:['#7C3AED','#7C3AED','#D97B2B','#9CA3AF'] },
+];
+let nextPresetId = 5;
+
+// ── SCREEN SWITCHING ──
+function showScreen(name, btn) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  if (name === 'assignments') renderAssignments();
+  if (name === 'presets') renderPresets();
+  if (name === 'calendar') renderCalendar();
+}
+
+// ── SESSION NAME ──
+document.getElementById('sessionBtn').addEventListener('click', () => {
+  document.getElementById('sessionInput').value = sessionName;
+  document.getElementById('sessionModal').classList.add('open');
+});
+function saveSession() {
+  const v = document.getElementById('sessionInput').value.trim();
+  if (v) { sessionName = v; document.getElementById('sessionBtn').textContent = v; }
+  closeSessionModal();
+}
+function closeSessionModal() { document.getElementById('sessionModal').classList.remove('open'); }
+
+// ── LANES RENDER ──
+function renderLanes() {
+  const area = document.getElementById('lanesArea');
+  const rp = document.getElementById('rpLanes');
+  area.innerHTML = '';
+  rp.innerHTML = '';
+
+  lanes.forEach((lane, idx) => {
+    // Lane row
+    const row = document.createElement('div');
+    row.className = 'lane-row';
+    row.dataset.laneIdx = idx;
+
+    const label = document.createElement('div');
+    label.className = 'lane-label';
+    label.innerHTML = `<div class="lane-num">${lane.id}</div><div class="lane-swimmers">${lane.swimmers.join(', ') || 'No swimmers'}</div>`;
+
+    const track = document.createElement('div');
+    track.className = 'lane-track';
+    track.dataset.laneIdx = idx;
+
+    track.addEventListener('dragover', e => { e.preventDefault(); row.classList.add('drag-over'); });
+    track.addEventListener('dragleave', () => row.classList.remove('drag-over'));
+    track.addEventListener('drop', e => {
+      e.preventDefault();
+      row.classList.remove('drag-over');
+      const data = JSON.parse(e.dataTransfer.getData('application/swimset'));
+      const rect = track.getBoundingClientRect();
+      const leftPct = Math.max(0, Math.min(85, ((e.clientX - rect.left) / rect.width) * 100));
+      lanes[idx].blocks.push({ type: data.type, name: data.name, sub: data.sub, l: leftPct, w: data.w });
+      renderLanes();
+    });
+
+    lane.blocks.forEach((b, bi) => {
+      const bl = document.createElement('div');
+      bl.className = `swim-block ${b.type}`;
+      bl.style.left = b.l + '%';
+      bl.style.width = b.w + '%';
+      bl.innerHTML = `<div class="b-name">${b.name}</div><div class="b-sub">${b.sub}</div><div class="block-remove" onclick="removeBlock(${idx},${bi},event)">✕</div>`;
+      track.appendChild(bl);
+    });
+
+    row.appendChild(label);
+    row.appendChild(track);
+    area.appendChild(row);
+
+    // Right panel
+    const rpRow = document.createElement('div');
+    rpRow.className = 'rp-lane';
+    rpRow.innerHTML = `
+      <div class="rp-lane-label">Lane ${lane.id}</div>
+      <button class="cp-btn" id="copy-${idx}" onclick="copyLane(${idx})">Copy</button>
+      <button class="cp-btn" onclick="pasteLane(${idx})">Paste</button>
+    `;
+    rp.appendChild(rpRow);
+  });
+}
+
+function removeBlock(laneIdx, blockIdx, e) {
+  e.stopPropagation();
+  lanes[laneIdx].blocks.splice(blockIdx, 1);
+  renderLanes();
+}
+
+function copyLane(idx) {
+  clipboard = JSON.parse(JSON.stringify(lanes[idx].blocks));
+  document.querySelectorAll('.cp-btn').forEach(b => b.classList.remove('copy-active'));
+  const btn = document.getElementById(`copy-${idx}`);
+  if (btn) btn.classList.add('copy-active');
+  showToast(`Copied Lane ${lanes[idx].id}`);
+}
+
+function pasteLane(idx) {
+  if (!clipboard) { showToast('Nothing to paste — copy a lane first'); return; }
+  lanes[idx].blocks = JSON.parse(JSON.stringify(clipboard));
+  renderLanes();
+  showToast(`Pasted to Lane ${lanes[idx].id}`);
+}
+
+function addLane() {
+  lanes.push({ id: nextLaneId++, swimmers: [], blocks: [] });
+  renderLanes();
+  showToast('Lane added');
+}
+
+function removeLane() {
+  if (lanes.length <= 1) { showToast('Must have at least 1 lane'); return; }
+  lanes.pop();
+  renderLanes();
+  showToast('Lane removed');
+}
+
+// Palette drag setup
+document.querySelectorAll('.chip[draggable]').forEach(chip => {
+  chip.addEventListener('dragstart', e => {
+    e.dataTransfer.setData('application/swimset', JSON.stringify({
+      type: chip.dataset.type,
+      name: chip.dataset.name,
+      sub: chip.dataset.sub,
+      w: parseFloat(chip.dataset.w) || 14,
+    }));
+  });
+});
+
+// ── CUSTOM MODAL ──
+function openCustomModal() { document.getElementById('customModal').classList.add('open'); }
+function closeCustomModal() {
+  document.getElementById('customModal').classList.remove('open');
+  document.getElementById('cName').value = '';
+  document.getElementById('cSub').value = '';
+  document.getElementById('cStats').value = '';
+  customType = 'sprint';
+  document.querySelectorAll('.type-opt').forEach(o => o.classList.remove('sel'));
+  document.querySelector('.type-opt.sprint').classList.add('sel');
+}
+function selType(el, t) {
+  document.querySelectorAll('.type-opt').forEach(o => o.classList.remove('sel'));
+  el.classList.add('sel');
+  customType = t;
+}
+const pillColors = { sprint:'#E8432D', tech:'#D97B2B', aerobic:'#2B7DD9', im:'#7C3AED' };
+const pillLabels = { sprint:'Sprint', tech:'Technique', aerobic:'Aerobic', im:'IM' };
+function saveCustom() {
+  const name = document.getElementById('cName').value.trim();
+  if (!name) { document.getElementById('cName').focus(); return; }
+  const sub   = document.getElementById('cSub').value.trim();
+  const stats = document.getElementById('cStats').value.trim();
+
+  const chip = document.createElement('div');
+  chip.className = `chip ${customType}`;
+  chip.draggable = true;
+  chip.dataset.type = customType;
+  chip.dataset.name = name;
+  chip.dataset.sub  = sub;
+  chip.dataset.stats = stats;
+  chip.dataset.w = '14';
+  chip.innerHTML = `<div class="chip-name">${name}</div>${sub?`<div class="chip-sub">${sub}</div>`:''}${stats?`<div class="chip-stats">${stats}</div>`:''}<div class="chip-pill" style="background:${pillColors[customType]}">${pillLabels[customType]}</div>`;
+  chip.addEventListener('dragstart', e => {
+    e.dataTransfer.setData('application/swimset', JSON.stringify({ type: customType, name, sub, w: 14 }));
+  });
+
+  const palette = document.getElementById('palette');
+  const footer = palette.querySelector('.pal-footer');
+  const div = document.createElement('div'); div.className = 'pal-divider';
+  const sec = document.createElement('div'); sec.className = 'pal-section';
+  sec.appendChild(chip);
+  palette.insertBefore(div, footer);
+  palette.insertBefore(sec, footer);
+  closeCustomModal();
+  showToast(`"${name}" added to palette`);
+}
+
+// ── ASSIGNMENTS ──
+function renderAssignments() {
+  const el = document.getElementById('assignLanes');
+  el.innerHTML = '';
+  lanes.forEach((lane, idx) => {
+    const card = document.createElement('div');
+    card.className = 'assign-lane-card';
+    card.innerHTML = `
+      <div class="assign-lane-num">${lane.id}</div>
+      <div class="assign-lane-body">
+        <div class="assign-lane-label">Lane ${lane.id}</div>
+        <div class="assign-swimmers" id="swimmers-${idx}"></div>
+        <div class="add-swimmer-row">
+          <input class="add-swimmer-input" id="swimInput-${idx}" placeholder="Add swimmer name…" onkeydown="if(event.key==='Enter') addSwimmer(${idx})"/>
+          <button class="add-swimmer-btn" onclick="addSwimmer(${idx})">Add</button>
+        </div>
+      </div>
+    `;
+    el.appendChild(card);
+    renderSwimmerTags(idx);
+  });
+}
+
+function renderSwimmerTags(idx) {
+  const el = document.getElementById(`swimmers-${idx}`);
+  if (!el) return;
+  el.innerHTML = lanes[idx].swimmers.map((s, si) =>
+    `<div class="swimmer-tag">${s}<div class="swimmer-remove" onclick="removeSwimmer(${idx},${si})">✕</div></div>`
+  ).join('');
+}
+
+function addSwimmer(idx) {
+  const input = document.getElementById(`swimInput-${idx}`);
+  const name = input.value.trim();
+  if (!name) return;
+  lanes[idx].swimmers.push(name);
+  input.value = '';
+  renderSwimmerTags(idx);
+  renderLanes();
+}
+
+function removeSwimmer(idx, si) {
+  lanes[idx].swimmers.splice(si, 1);
+  renderSwimmerTags(idx);
+  renderLanes();
+}
+
+// ── PRESETS ──
+function renderPresets() {
+  const grid = document.getElementById('presetsGrid');
+  grid.innerHTML = presets.map(p => `
+    <div class="preset-card">
+      <div class="preset-name">${p.name}</div>
+      <div class="preset-meta">${p.meta}</div>
+      <div class="preset-dots">${p.dots.map(c => `<div class="preset-dot" style="background:${c}"></div>`).join('')}</div>
+      <div class="preset-actions">
+        <div class="preset-load-btn" onclick="loadPreset(${p.id})">Load</div>
+        <div class="preset-del-btn" onclick="deletePreset(${p.id})">Delete</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function loadPreset(id) {
+  showToast('Preset loaded onto timeline');
+  showScreen('planner', document.getElementById('navSets'));
+}
+
+function deletePreset(id) {
+  presets = presets.filter(p => p.id !== id);
+  renderPresets();
+  showToast('Preset deleted');
+}
+
+function saveAsPreset() {
+  const name = prompt('Name this preset:');
+  if (!name) return;
+  const dots = lanes.flatMap(l => l.blocks.slice(0,1).map(b => {
+    const map = {sprint:'#E8432D',tech:'#D97B2B',aerobic:'#2B7DD9',im:'#7C3AED',rest:'#9CA3AF'};
+    return map[b.type] || '#9CA3AF';
+  })).slice(0,4);
+  while (dots.length < 4) dots.push('#E2DFD6');
+  presets.push({ id: nextPresetId++, name, meta: `${lanes.length} lanes · 90 min`, dots });
+  renderPresets();
+  showToast(`"${name}" saved as preset`);
+}
+
+// ── CALENDAR ──
+let calYear = 2026, calMonth = 2; // March 2026
+const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const practiceDays = { '2026-3-10': 'Sprint', '2026-3-12': 'Technique', '2026-3-15': 'IM', '2026-3-17': 'Aerobic', '2026-3-19': 'Sprint', '2026-3-22': 'Technique' };
+
+function renderCalendar() {
+  document.getElementById('calTitle').textContent = `${MONTHS[calMonth]} ${calYear}`;
+  const namesEl = document.getElementById('calDayNames');
+  namesEl.innerHTML = DAYS.map(d => `<div class="cal-day-name">${d}</div>`).join('');
+
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const today = new Date();
+
+  for (let i = 0; i < firstDay; i++) {
+    const empty = document.createElement('div');
+    empty.className = 'cal-day empty';
+    empty.innerHTML = '<div class="cal-day-num">0</div>';
+    grid.appendChild(empty);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = `${calYear}-${calMonth+1}-${d}`;
+    const isToday = today.getFullYear()===calYear && today.getMonth()===calMonth && today.getDate()===d;
+    const practice = practiceDays[key];
+
+    const cell = document.createElement('div');
+    cell.className = 'cal-day' + (isToday ? ' today' : '') + (practice ? ' has-practice' : '');
+    cell.onclick = () => openDay(d, key);
+
+    let inner = `<div class="cal-day-num">${d}</div>`;
+    if (practice) {
+      const colors = { Sprint:'#E8432D', Technique:'#D97B2B', Aerobic:'#2B7DD9', IM:'#7C3AED' };
+      inner += `<div class="cal-practice-tag" style="background:${colors[practice]}">${practice}</div>`;
+    }
+    cell.innerHTML = inner;
+    grid.appendChild(cell);
+  }
+}
+
+function changeMonth(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0)  { calMonth = 11; calYear--; }
+  renderCalendar();
+}
+
+function openDay(d, key) {
+  const month = MONTHS[calMonth];
+  sessionName = `${['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date(calYear,calMonth,d).getDay()]} ${month} ${d}`;
+  document.getElementById('sessionBtn').textContent = sessionName;
+  showScreen('planner', document.getElementById('navSets'));
+  showToast(`Opened ${sessionName}`);
+}
+
+// ── TRIANGLE DIAL ──
+const canvas = document.getElementById('triCanvas');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const PAD = 16;
+const vS = { x: W/2,   y: PAD,      color:'#E8432D', label:'Sprint'    };
+const vA = { x: PAD,   y: H-PAD,    color:'#2B7DD9', label:'Aerobic'   };
+const vT = { x: W-PAD, y: H-PAD,    color:'#D97B2B', label:'Technique' };
+const verts = [vS, vA, vT];
+let dot = { x: (vS.x+vA.x+vT.x)/3, y: (vS.y+vA.y+vT.y)/3 };
+let draggingTri = false;
+
+function bary(px,py) {
+  const [a,b,c] = verts;
+  const denom = (b.y-c.y)*(a.x-c.x)+(c.x-b.x)*(a.y-c.y);
+  const w1 = ((b.y-c.y)*(px-c.x)+(c.x-b.x)*(py-c.y))/denom;
+  const w2 = ((c.y-a.y)*(px-c.x)+(a.x-c.x)*(py-c.y))/denom;
+  return [Math.max(0,w1), Math.max(0,w2), Math.max(0,1-w1-w2)];
+}
+
+function clamp(px,py) {
+  let [w1,w2,w3] = bary(px,py);
+  const s = w1+w2+w3||1; w1/=s; w2/=s; w3/=s;
+  return { x: w1*vS.x+w2*vA.x+w3*vT.x, y: w1*vS.y+w2*vA.y+w3*vT.y };
+}
+
+function getWeights() {
+  let [w1,w2,w3] = bary(dot.x,dot.y);
+  const s = w1+w2+w3||1;
+  return { sprint:w1/s, aerobic:w2/s, tech:w3/s };
+}
+
+function drawTri() {
+  ctx.clearRect(0,0,W,H);
+  // Fill
+  ctx.beginPath();
+  ctx.moveTo(vS.x,vS.y); ctx.lineTo(vA.x,vA.y); ctx.lineTo(vT.x,vT.y);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(200,196,184,0.2)';
+  ctx.fill();
+  // Edges
+  [[vS,vA],[vA,vT],[vT,vS]].forEach(([a,b]) => {
+    const g = ctx.createLinearGradient(a.x,a.y,b.x,b.y);
+    g.addColorStop(0,a.color); g.addColorStop(1,b.color);
+    ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y);
+    ctx.strokeStyle=g; ctx.lineWidth=1.5; ctx.stroke();
+  });
+  // Vertex dots
+  verts.forEach(v => {
+    ctx.beginPath(); ctx.arc(v.x,v.y,3,0,Math.PI*2);
+    ctx.fillStyle=v.color; ctx.fill();
+  });
+  // Dot
+  ctx.beginPath(); ctx.arc(dot.x,dot.y,6,0,Math.PI*2);
+  ctx.fillStyle='#fff'; ctx.fill();
+  ctx.beginPath(); ctx.arc(dot.x,dot.y,4,0,Math.PI*2);
+  const w = getWeights();
+  const r = Math.round(232*w.sprint+43*w.aerobic+217*w.tech);
+  const g2 = Math.round(67*w.sprint+125*w.aerobic+123*w.tech);
+  const b2 = Math.round(45*w.sprint+217*w.aerobic+43*w.tech);
+  ctx.fillStyle = `rgb(${r},${g2},${b2})`; ctx.fill();
+  updateTriReadout(w);
+}
+
+function updateTriReadout(w) {
+  const el = document.getElementById('triReadout');
+  const items = [
+    { label:'Sprint', color:'#E8432D', val:w.sprint },
+    { label:'Aerobic', color:'#2B7DD9', val:w.aerobic },
+    { label:'Tech', color:'#D97B2B', val:w.tech },
+  ];
+  el.innerHTML = items.map(i => `
+    <div class="tri-stat">
+      <div class="tri-pct" style="color:${i.color}">${Math.round(i.val*100)}%</div>
+      <div class="tri-bar-wrap"><div class="tri-bar" style="width:${i.val*100}%;background:${i.color}"></div></div>
+      <div class="tri-stat-label" style="color:${i.color}">${i.label}</div>
+    </div>
+  `).join('');
+}
+
+canvas.addEventListener('mousedown', e => { draggingTri=true; moveDot(e); });
+canvas.addEventListener('mousemove', e => { if(draggingTri) moveDot(e); });
+canvas.addEventListener('mouseup', () => draggingTri=false);
+canvas.addEventListener('touchstart', e => { e.preventDefault(); draggingTri=true; moveDot(e.touches[0]); });
+canvas.addEventListener('touchmove', e => { e.preventDefault(); if(draggingTri) moveDot(e.touches[0]); });
+canvas.addEventListener('touchend', () => draggingTri=false);
+
+function moveDot(e) {
+  const r = canvas.getBoundingClientRect();
+  dot = clamp(e.clientX-r.left, e.clientY-r.top);
+  drawTri();
+}
+
+// ── SEND TO TEAM ──
+function sendToTeam() {
+  const total = lanes.reduce((sum, l) => sum + l.swimmers.length, 0);
+  document.getElementById('sentSub').textContent = `Practice sent to ${total} swimmer${total!==1?'s':''}`;
+  document.getElementById('sentOverlay').classList.add('show');
+}
+function closeSent() { document.getElementById('sentOverlay').classList.remove('show'); }
+
+// ── TOAST ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ── INIT ──
+renderLanes();
+drawTri();
+</script>
+</body>
+</html>

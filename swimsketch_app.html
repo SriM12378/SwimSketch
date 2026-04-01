@@ -1290,6 +1290,17 @@
         </div>
       </div>
       <div style="margin:10px 0;">
+        <label style="display:block;margin-bottom:5px;font-weight:600;">Type:</label>
+        <select id="practiceTypeInput" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;">
+          <option value="Sprint">Sprint</option>
+          <option value="Technique">Technique</option>
+          <option value="Aerobic">Aerobic</option>
+          <option value="IM">IM</option>
+          <option value="Rest">Rest</option>
+          <option value="Custom">Custom</option>
+        </select>
+      </div>
+      <div style="margin:10px 0;">
         <label style="display:block;margin-bottom:5px;font-weight:600;">Name (optional):</label>
         <input type="text" id="practiceNameInput" placeholder="e.g. Morning Practice" style="width:100%;padding:8px;border:1px solid var(--border);border-radius:4px;"/>
       </div>
@@ -1313,18 +1324,6 @@
     </div>
   </div>
 
-  <!-- Practice time modal -->
-  <div class="session-modal" id="practiceTimeModal">
-    <div class="session-card">
-      <h3 id="practiceTimeTitle">Set Practice Time</h3>
-      <input class="session-input" id="practiceTimeInput" type="time" value="16:00"/>
-      <input class="session-input" id="practiceNameInput" placeholder="Practice name (optional)" value=""/>
-      <div class="session-btns">
-        <button class="session-ok" onclick="confirmPracticeTime()">Create Practice</button>
-        <button class="session-cancel" onclick="closePracticeTimeModal()">Cancel</button>
-      </div>
-    </div>
-  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1901,7 +1900,14 @@ function renderCalendar() {
     if (practices.length > 0) {
       inner += '<div class="cal-practices">';
       practices.forEach(practice => {
-        const colors = { Sprint:'#E8432D', Technique:'#D97B2B', Aerobic:'#2B7DD9', IM:'#7C3AED' };
+        const colors = {
+          Sprint: '#E8432D',
+          Technique: '#D97B2B',
+          Aerobic: '#2B7DD9',
+          IM: '#7C3AED',
+          Rest: '#9CA3AF',
+          Custom: '#6B6760'
+        };
         inner += `<div class="cal-practice-item" style="background: ${colors[practice.type] || '#9CA3AF'}">
           <div class="cal-practice-time">${practice.time}</div>
           <div class="cal-practice-name">${practice.name}</div>
@@ -1938,6 +1944,7 @@ function openDay(d, key) {
     document.getElementById('practiceHourInput').value = '4';
     document.getElementById('practiceMinuteInput').value = '00';
     document.getElementById('practiceAmPmInput').value = 'PM';
+    document.getElementById('practiceTypeInput').value = 'Custom';
     document.getElementById('practiceNameInput').value = '';
     document.getElementById('practiceTimeModal').classList.add('open');
   } else if (practices.length === 1) {
@@ -2007,6 +2014,7 @@ function editPracticeTime(key, practiceIdx) {
   document.getElementById('practiceHourInput').value = hour;
   document.getElementById('practiceMinuteInput').value = minute;
   document.getElementById('practiceAmPmInput').value = ampm;
+  document.getElementById('practiceTypeInput').value = practice.type || 'Custom';
   document.getElementById('practiceNameInput').value = practice.name;
   document.getElementById('practiceTimeModal').classList.add('open');
 }
@@ -2029,6 +2037,7 @@ function addNewPracticeToDay(key, d) {
   document.getElementById('practiceHourInput').value = '4';
   document.getElementById('practiceMinuteInput').value = '00';
   document.getElementById('practiceAmPmInput').value = 'PM';
+  document.getElementById('practiceTypeInput').value = 'Custom';
   document.getElementById('practiceNameInput').value = '';
   document.getElementById('practiceTimeModal').classList.add('open');
 }
@@ -2037,6 +2046,7 @@ function confirmPracticeTime() {
   const hour = document.getElementById('practiceHourInput').value;
   const minute = document.getElementById('practiceMinuteInput').value;
   const ampm = document.getElementById('practiceAmPmInput').value;
+  const type = document.getElementById('practiceTypeInput').value || 'Custom';
   const time = `${hour}:${minute} ${ampm}`;
   const name = document.getElementById('practiceNameInput').value.trim() || `Practice at ${time}`;
   
@@ -2049,7 +2059,7 @@ function confirmPracticeTime() {
   const practice = {
     time: time,
     name: name,
-    type: 'Custom', // Default type for new practices
+    type: type,
     lanes: [
       { id:1, swimmers:[], blocks:[] },
       { id:2, swimmers:[], blocks:[] },
@@ -2063,7 +2073,8 @@ function confirmPracticeTime() {
     practiceDays[currentDayKey][currentEditingPracticeIdx] = {
       ...practiceDays[currentDayKey][currentEditingPracticeIdx],
       time: time,
-      name: name
+      name: name,
+      type: type
     };
     currentEditingPracticeIdx = null;
     renderCalendar();

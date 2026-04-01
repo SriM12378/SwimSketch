@@ -757,10 +757,100 @@
     width: 8px; height: 8px;
     border-radius: 50%;
   }
+  .preset-plan {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px;
+    max-height: 150px;
+    overflow: auto;
+    font-size: 11px;
+    color: var(--ink);
+    margin: 8px 0;
+  }
+  .plan-lane {
+    margin-bottom: 12px;
+  }
+  .plan-lane:last-child {
+    margin-bottom: 0;
+  }
+  .plan-lane-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--grid);
+  }
+  .plan-lane-num {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--ink);
+    flex-shrink: 0;
+  }
+  .plan-swimmers {
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .plan-sets {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .plan-set {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px;
+    background: rgba(0,0,0,0.02);
+    border-radius: 4px;
+  }
+  .plan-set-num {
+    font-size: 9px;
+    color: var(--muted);
+    font-weight: 600;
+    min-width: 12px;
+  }
+  .plan-set-name {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--ink);
+    flex: 1;
+  }
+  .plan-set-sub {
+    font-size: 9px;
+    color: var(--muted);
+    font-style: italic;
+  }
+  .plan-set-type {
+    font-size: 8px;
+    font-weight: 700;
+    color: #fff;
+    padding: 2px 6px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .plan-no-sets {
+    font-size: 10px;
+    color: var(--muted);
+    font-style: italic;
+    padding: 4px 6px;
+  }
   .preset-actions {
     display: flex;
     gap: 5px;
     margin-top: auto;
+    flex-wrap: wrap;
   }
   .preset-load-btn {
     flex: 1;
@@ -1140,6 +1230,36 @@
       </div>
     </div>
   </div>
+
+  <!-- Save preset modal -->
+  <div class="session-modal" id="savePresetModal">
+    <div class="session-card">
+      <h3>Save as Preset</h3>
+      <input class="session-input" id="presetNameInput" placeholder="Preset name"/>
+      <div style="margin:10px 0;">
+        <label><input type="radio" name="presetType" value="all" checked> Save entire practice</label><br>
+        <label><input type="radio" name="presetType" value="lane"> Save specific lane: </label>
+        <input type="number" id="presetLaneInput" placeholder="Lane #" min="1" style="width:60px;margin-left:5px;padding:4px;border:1px solid var(--border);border-radius:4px;"/>
+      </div>
+      <div class="session-btns">
+        <button class="session-ok" onclick="confirmSavePreset()">Save</button>
+        <button class="session-cancel" onclick="closeSavePresetModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load lane modal -->
+  <div class="session-modal" id="loadLaneModal">
+    <div class="session-card">
+      <h3>Load Preset to Lane</h3>
+      <input class="session-input" id="targetLaneInput" placeholder="Target lane #" type="number" min="1"/>
+      <input class="session-input" id="sourceLaneInput" placeholder="Source lane # (optional)" type="number" min="1"/>
+      <div class="session-btns">
+        <button class="session-ok" onclick="confirmLoadLane()">Load</button>
+        <button class="session-cancel" onclick="closeLoadLaneModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1174,12 +1294,32 @@ let customType = 'sprint';
 let sessionName = 'Tuesday 4:00 – 5:30 pm';
 
 let presets = [
-  { id:1, name:'Sprint Heavy', meta:'High intensity · 90 min', dots:['#E8432D','#E8432D','#D97B2B','#9CA3AF'] },
-  { id:2, name:'Technique Focus', meta:'Drill-heavy · 75 min', dots:['#D97B2B','#D97B2B','#9CA3AF','#9CA3AF'] },
-  { id:3, name:'Aerobic Base', meta:'Steady state · 90 min', dots:['#2B7DD9','#2B7DD9','#2B7DD9','#9CA3AF'] },
-  { id:4, name:'IM Builder', meta:'All strokes · 90 min', dots:['#7C3AED','#7C3AED','#D97B2B','#9CA3AF'] },
+  { id:1, name:'Sprint Heavy', meta:'High intensity · 90 min', dots:['#E8432D','#E8432D','#D97B2B','#9CA3AF'], lanes: [
+    { id:1, swimmers:['Alex R.', 'Jamie L.'], blocks:[{type:'sprint', name:'8×50 Free', sub:'on :50', l:3, w:13},{type:'rest', name:'Rest', sub:'2 min', l:17, w:7},{type:'sprint', name:'8×50 Free', sub:'on :50', l:25, w:13}]},
+    { id:2, swimmers:['Sam K.'], blocks:[{type:'tech', name:'Catch Up', sub:'drill', l:3, w:11},{type:'sprint', name:'8×50 Fly', sub:'Sprint', l:16, w:13},{type:'rest', name:'Rest', sub:'2 min', l:30, w:7}]},
+    { id:3, swimmers:['Casey M.', 'Drew P.'], blocks:[{type:'im', name:'4×100 IM', sub:'on 1:40', l:3, w:17},{type:'rest', name:'Rest', sub:'2 min', l:21, w:7},{type:'im', name:'4×200 IM', sub:'on 3:20', l:29, w:22}]},
+    { id:4, swimmers:['Jordan T.'], blocks:[{type:'aerobic', name:'600 Free', sub:'steady', l:3, w:20},{type:'rest', name:'Rest', sub:'2 min', l:24, w:7},{type:'tech', name:'Legs Only', sub:'8×50 kick', l:32, w:13}]}
+  ], type:'all' },
+  { id:2, name:'Technique Focus', meta:'Drill-heavy · 75 min', dots:['#D97B2B','#D97B2B','#9CA3AF','#9CA3AF'], lanes: [
+    { id:1, swimmers:['Alex R.', 'Jamie L.'], blocks:[{type:'tech', name:'Catch Up', sub:'drill', l:3, w:11},{type:'tech', name:'One Arm Fly', sub:'drill', l:16, w:11},{type:'rest', name:'Rest', sub:'2 min', l:29, w:7}]},
+    { id:2, swimmers:['Sam K.'], blocks:[{type:'tech', name:'Legs Only', sub:'8×50 kick', l:3, w:13},{type:'tech', name:'Catch Up', sub:'drill', l:18, w:11},{type:'rest', name:'Rest', sub:'2 min', l:31, w:7}]},
+    { id:3, swimmers:['Casey M.', 'Drew P.'], blocks:[{type:'tech', name:'One Arm Fly', sub:'drill', l:3, w:11},{type:'tech', name:'Legs Only', sub:'8×50 kick', l:16, w:13},{type:'rest', name:'Rest', sub:'2 min', l:31, w:7}]},
+    { id:4, swimmers:['Jordan T.'], blocks:[{type:'tech', name:'Catch Up', sub:'drill', l:3, w:11},{type:'tech', name:'One Arm Fly', sub:'drill', l:16, w:11},{type:'rest', name:'Rest', sub:'2 min', l:29, w:7}]}
+  ], type:'all' },
+  { id:3, name:'Aerobic Base', meta:'Steady state · 90 min', dots:['#2B7DD9','#2B7DD9','#2B7DD9','#9CA3AF'], lanes: [
+    { id:1, swimmers:['Alex R.', 'Jamie L.'], blocks:[{type:'aerobic', name:'600 Free', sub:'steady', l:3, w:20},{type:'rest', name:'Rest', sub:'2 min', l:24, w:7}]},
+    { id:2, swimmers:['Sam K.'], blocks:[{type:'aerobic', name:'600 Free', sub:'steady', l:3, w:20},{type:'rest', name:'Rest', sub:'2 min', l:24, w:7}]},
+    { id:3, swimmers:['Casey M.', 'Drew P.'], blocks:[{type:'aerobic', name:'600 Free', sub:'steady', l:3, w:20},{type:'rest', name:'Rest', sub:'2 min', l:24, w:7}]},
+    { id:4, swimmers:['Jordan T.'], blocks:[{type:'aerobic', name:'600 Free', sub:'steady', l:3, w:20},{type:'rest', name:'Rest', sub:'2 min', l:24, w:7}]}
+  ], type:'all' },
+  { id:4, name:'IM Builder', meta:'All strokes · 90 min', dots:['#7C3AED','#7C3AED','#D97B2B','#9CA3AF'], lanes: [
+    { id:1, swimmers:['Alex R.', 'Jamie L.'], blocks:[{type:'im', name:'4×100 IM', sub:'on 1:40', l:3, w:17},{type:'rest', name:'Rest', sub:'2 min', l:21, w:7},{type:'im', name:'4×200 IM', sub:'on 3:20', l:29, w:22}]},
+    { id:2, swimmers:['Sam K.'], blocks:[{type:'im', name:'4×100 IM', sub:'on 1:40', l:3, w:17},{type:'rest', name:'Rest', sub:'2 min', l:21, w:7},{type:'im', name:'4×200 IM', sub:'on 3:20', l:29, w:22}]},
+    { id:3, swimmers:['Casey M.', 'Drew P.'], blocks:[{type:'im', name:'4×100 IM', sub:'on 1:40', l:3, w:17},{type:'rest', name:'Rest', sub:'2 min', l:21, w:7},{type:'im', name:'4×200 IM', sub:'on 3:20', l:29, w:22}]},
+    { id:4, swimmers:['Jordan T.'], blocks:[{type:'im', name:'4×100 IM', sub:'on 1:40', l:3, w:17},{type:'rest', name:'Rest', sub:'2 min', l:21, w:7},{type:'im', name:'4×200 IM', sub:'on 3:20', l:29, w:22}]}
+  ], type:'all' }
 ];
-let nextPresetId = 5;
+let currentPresetId = null;
 
 // ── SCREEN SWITCHING ──
 function showScreen(name, btn) {
@@ -1422,44 +1562,164 @@ function removeSwimmer(idx, si) {
 }
 
 // ── PRESETS ──
-function renderPresets() {
-  const grid = document.getElementById('presetsGrid');
-  grid.innerHTML = presets.map(p => `
-    <div class="preset-card">
-      <div class="preset-name">${p.name}</div>
-      <div class="preset-meta">${p.meta}</div>
-      <div class="preset-dots">${p.dots.map(c => `<div class="preset-dot" style="background:${c}"></div>`).join('')}</div>
-      <div class="preset-actions">
-        <div class="preset-load-btn" onclick="loadPreset(${p.id})">Load</div>
-        <div class="preset-del-btn" onclick="deletePreset(${p.id})">Delete</div>
+function generatePresetPlanHtml(lanes) {
+  return lanes.map(lane => {
+    const swimmers = lane.swimmers.length ? lane.swimmers.join(', ') : 'No swimmers';
+    const laneHtml = `
+      <div class="plan-lane">
+        <div class="plan-lane-header">
+          <span class="plan-lane-num">${lane.id}</span>
+          <span class="plan-swimmers">${swimmers}</span>
+        </div>
+        <div class="plan-sets">
+          ${lane.blocks.length ? lane.blocks.map((b, i) => `
+            <div class="plan-set" style="border-left: 3px solid ${getTypeColor(b.type)}">
+              <span class="plan-set-num">${i + 1}.</span>
+              <span class="plan-set-name">${b.name}</span>
+              ${b.sub ? `<span class="plan-set-sub">${b.sub}</span>` : ''}
+              <span class="plan-set-type" style="background: ${getTypeColor(b.type)}">${getTypeLabel(b.type)}</span>
+            </div>
+          `).join('') : '<div class="plan-no-sets">(No sets yet)</div>'}
+        </div>
       </div>
-    </div>
-  `).join('');
+    `;
+    return laneHtml;
+  }).join('');
 }
 
-function loadPreset(id) {
-  showToast('Preset loaded onto timeline');
+function getTypeColor(type) {
+  const colors = {
+    sprint: '#E8432D',
+    tech: '#D97B2B',
+    aerobic: '#2B7DD9',
+    im: '#7C3AED',
+    rest: '#9CA3AF'
+  };
+  return colors[type] || '#9CA3AF';
+}
+
+function getTypeLabel(type) {
+  const labels = {
+    sprint: 'Sprint',
+    tech: 'Technique',
+    aerobic: 'Aerobic',
+    im: 'IM',
+    rest: 'Rest'
+  };
+  return labels[type] || 'Set';
+}
+
+function renderPresets() {
+  const grid = document.getElementById('presetsGrid');
+  grid.innerHTML = presets.map(p => {
+    const planHtml = generatePresetPlanHtml(p.lanes);
+
+    const isDefault = p.id <= 4;
+    const deleteBtn = isDefault ? '' : `<div class="preset-del-btn" onclick="deletePreset(${p.id})">Delete</div>`;
+
+    return `
+      <div class="preset-card">
+        <div class="preset-name">${p.name}${isDefault ? ' <span style="color:var(--muted);font-size:10px;">(Default)</span>' : ''}</div>
+        <div class="preset-meta">${p.meta}</div>
+        <div class="preset-plan">${planHtml}</div>
+        <div class="preset-dots">${p.dots.map(c => `<div class="preset-dot" style="background:${c}"></div>`).join('')}</div>
+        <div class="preset-actions">
+          <div class="preset-load-btn" onclick="loadPresetAll(${p.id})">Load All</div>
+          <div class="preset-load-btn" onclick="loadPresetLane(${p.id})">Load Lane</div>
+          ${deleteBtn}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function loadPresetAll(id) {
+  const preset = presets.find(p => p.id === id);
+  if (!preset) return;
+  lanes = JSON.parse(JSON.stringify(preset.lanes));
+  renderLanes();
+  showToast(`Loaded preset "${preset.name}" to all lanes`);
   showScreen('planner', document.getElementById('navSets'));
 }
 
+function loadPresetLane(id) {
+  currentPresetId = id;
+  document.getElementById('targetLaneInput').value = '';
+  document.getElementById('sourceLaneInput').value = '';
+  document.getElementById('loadLaneModal').classList.add('open');
+}
+
+function confirmLoadLane() {
+  const target = parseInt(document.getElementById('targetLaneInput').value, 10);
+  const source = parseInt(document.getElementById('sourceLaneInput').value, 10) || 1;
+  if (!target) { showToast('Enter target lane'); return; }
+
+  const preset = presets.find(p => p.id === currentPresetId);
+  if (!preset) return;
+
+  const laneIdx = lanes.findIndex(l => l.id === target);
+  if (laneIdx === -1) { showToast('Target lane not found'); return; }
+
+  let sourceLane = preset.lanes.find(l => l.id === source) || preset.lanes[0];
+  if (!sourceLane) { showToast('Source lane not found'); return; }
+
+  lanes[laneIdx].blocks = JSON.parse(JSON.stringify(sourceLane.blocks));
+  lanes[laneIdx].swimmers = JSON.parse(JSON.stringify(sourceLane.swimmers));
+  renderLanes();
+  showToast(`Copied preset "${preset.name}" into lane ${target}`);
+  showScreen('planner', document.getElementById('navSets'));
+  closeLoadLaneModal();
+}
+
+function closeLoadLaneModal() { document.getElementById('loadLaneModal').classList.remove('open'); }
+
 function deletePreset(id) {
+  if (id <= 4) { showToast('Cannot delete default presets'); return; }
   presets = presets.filter(p => p.id !== id);
   renderPresets();
   showToast('Preset deleted');
 }
 
 function saveAsPreset() {
-  const name = prompt('Name this preset:');
-  if (!name) return;
-  const dots = lanes.flatMap(l => l.blocks.slice(0,1).map(b => {
-    const map = {sprint:'#E8432D',tech:'#D97B2B',aerobic:'#2B7DD9',im:'#7C3AED',rest:'#9CA3AF'};
+  document.getElementById('presetNameInput').value = '';
+  document.getElementById('presetLaneInput').value = '';
+  document.querySelector('input[name="presetType"][value="all"]').checked = true;
+  document.getElementById('savePresetModal').classList.add('open');
+}
+
+function confirmSavePreset() {
+  const name = document.getElementById('presetNameInput').value.trim();
+  if (!name) { showToast('Enter preset name'); return; }
+
+  const type = document.querySelector('input[name="presetType"]:checked').value;
+  let presetLanes;
+  let meta;
+
+  if (type === 'all') {
+    presetLanes = JSON.parse(JSON.stringify(lanes));
+    meta = `${lanes.length} lanes · 90 min`;
+  } else {
+    const laneId = parseInt(document.getElementById('presetLaneInput').value, 10);
+    if (!laneId) { showToast('Enter lane number'); return; }
+    const lane = lanes.find(l => l.id === laneId);
+    if (!lane) { showToast('Lane not found'); return; }
+    presetLanes = [JSON.parse(JSON.stringify(lane))];
+    meta = `Lane ${laneId} · 90 min`;
+  }
+
+  const dots = presetLanes.flatMap(l => l.blocks.slice(0,1).map(b => {
+    const map = { sprint: '#E8432D', tech: '#D97B2B', aerobic: '#2B7DD9', im: '#7C3AED', rest: '#9CA3AF' };
     return map[b.type] || '#9CA3AF';
   })).slice(0,4);
   while (dots.length < 4) dots.push('#E2DFD6');
-  presets.push({ id: nextPresetId++, name, meta: `${lanes.length} lanes · 90 min`, dots });
+
+  presets.push({ id: nextPresetId++, name, meta, dots, lanes: presetLanes, type });
   renderPresets();
   showToast(`"${name}" saved as preset`);
+  closeSavePresetModal();
 }
+
+function closeSavePresetModal() { document.getElementById('savePresetModal').classList.remove('open'); }
 
 // ── CALENDAR ──
 let calYear = 2026, calMonth = 2; // March 2026

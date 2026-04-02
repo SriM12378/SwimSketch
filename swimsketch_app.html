@@ -688,55 +688,169 @@
   /* ════════════════════════════════
      ASSIGNMENTS SCREEN
   ════════════════════════════════ */
-  .assignments-screen {
-    flex-direction: column;
-    background: var(--bg);
-    padding: 20px;
-    gap: 16px;
-    overflow-y: auto;
-  }
-  .assign-title {
-    font-family: 'Space Mono', monospace;
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--ink);
-  }
-  .assign-subtitle {
-    font-size: 12px;
-    color: var(--muted);
-    margin-top: 2px;
-  }
-  .assign-lanes {
+  .assignments-screen { flex-direction: row; background: var(--bg); overflow: hidden; }
+
+  /* Left roster sidebar */
+  .roster-sidebar {
+    width: 168px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1.5px solid var(--border);
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    overflow: hidden;
   }
-  .assign-lane-card {
+  .roster-header {
+    padding: 14px 12px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .roster-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    flex: 1;
+  }
+  .roster-add-btn {
+    padding: 4px 9px;
+    border-radius: 5px;
+    border: none;
+    background: var(--ink);
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .roster-add-btn:hover { background: var(--sprint); }
+  .roster-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .roster-empty {
+    font-size: 10px;
+    color: var(--muted);
+    font-style: italic;
+    text-align: center;
+    padding: 16px 0;
+  }
+  .roster-chip {
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 7px;
+    padding: 7px 8px 7px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--ink);
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.12s;
+    user-select: none;
+  }
+  .roster-chip:hover { border-color: var(--ink); background: var(--surface); }
+  .roster-chip:active { cursor: grabbing; }
+  .roster-chip-name { flex: 1; }
+  .roster-chip-del {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; cursor: pointer; color: var(--muted);
+    transition: all 0.12s;
+    flex-shrink: 0;
+  }
+  .roster-chip-del:hover { background: var(--sprint); color: #fff; }
+  .roster-add-row {
+    padding: 8px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 5px;
+    flex-shrink: 0;
+  }
+  .roster-input {
+    flex: 1;
+    padding: 5px 7px;
+    border-radius: 5px;
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    color: var(--ink);
+    outline: none;
+    min-width: 0;
+  }
+  .roster-input:focus { border-color: var(--ink); }
+  .roster-confirm-btn {
+    padding: 5px 8px;
+    border-radius: 5px;
+    border: none;
+    background: var(--ink);
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .roster-confirm-btn:hover { background: var(--sprint); }
+
+  /* Lane drop zones */
+  .assign-lanes-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .assign-zone {
     background: var(--surface);
     border: 1.5px solid var(--border);
     border-radius: 10px;
-    padding: 14px 16px;
+    padding: 10px 14px;
     display: flex;
-    align-items: flex-start;
-    gap: 16px;
+    align-items: center;
+    gap: 12px;
+    min-height: 56px;
+    transition: border-color 0.12s, background 0.12s;
   }
-  .assign-lane-num {
-    width: 40px; height: 40px;
+  .assign-zone.drag-over { border-color: var(--aerobic); background: var(--aerobic-light); }
+  .assign-zone-num {
+    width: 30px; height: 30px;
     border-radius: 50%;
     border: 2px solid var(--ink);
     display: flex; align-items: center; justify-content: center;
     font-family: 'Space Mono', monospace;
-    font-size: 18px; font-weight: 700;
+    font-size: 13px; font-weight: 700;
     flex-shrink: 0;
   }
-  .assign-lane-body { flex: 1; display: flex; flex-direction: column; gap: 8px; }
-  .assign-lane-label { font-size: 11px; font-weight: 700; color: var(--ink); }
-  .assign-swimmers { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-  .swimmer-tag {
-    background: var(--bg);
-    border: 1.5px solid var(--border);
+  .assign-zone-chips {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    align-items: center;
+    min-height: 28px;
+  }
+  .assign-zone-empty { font-size: 10px; color: var(--border); font-style: italic; }
+  .assigned-chip {
+    background: var(--aerobic-light);
+    border: 1.5px solid #B8D4F5;
     border-radius: 20px;
-    padding: 4px 10px;
+    padding: 4px 8px 4px 10px;
     font-size: 11px;
     font-weight: 500;
     color: var(--ink);
@@ -744,45 +858,15 @@
     align-items: center;
     gap: 5px;
   }
-  .swimmer-remove {
+  .assigned-chip-x {
     width: 14px; height: 14px;
-    background: var(--border);
     border-radius: 50%;
+    background: rgba(43,125,217,0.2);
     display: flex; align-items: center; justify-content: center;
-    font-size: 9px; cursor: pointer; color: var(--muted);
+    font-size: 9px; cursor: pointer; color: var(--aerobic);
     transition: all 0.12s;
   }
-  .swimmer-remove:hover { background: var(--sprint); color: #fff; }
-  .add-swimmer-row {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-  }
-  .add-swimmer-input {
-    flex: 1;
-    padding: 5px 10px;
-    border-radius: 6px;
-    border: 1.5px solid var(--border);
-    background: var(--bg);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 11px;
-    color: var(--ink);
-    outline: none;
-  }
-  .add-swimmer-input:focus { border-color: var(--ink); }
-  .add-swimmer-btn {
-    padding: 5px 12px;
-    border-radius: 6px;
-    border: none;
-    background: var(--ink);
-    color: #fff;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 11px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.12s;
-  }
-  .add-swimmer-btn:hover { background: var(--sprint); }
+  .assigned-chip-x:hover { background: var(--sprint); color: #fff; }
 
   /* ════════════════════════════════
      PRESETS SCREEN
@@ -1285,11 +1369,20 @@
 
   <!-- ── ASSIGNMENTS SCREEN ── -->
   <div class="screen assignments-screen" id="screen-assignments">
-    <div>
-      <div class="assign-title">Lane Assignments</div>
-      <div class="assign-subtitle">Assign swimmers to each lane for this session</div>
+    <!-- Roster sidebar -->
+    <div class="roster-sidebar">
+      <div class="roster-header">
+        <span class="roster-title">Roster</span>
+        <button class="roster-add-btn" onclick="toggleRosterAdd()">+ Add</button>
+      </div>
+      <div class="roster-list" id="rosterList"></div>
+      <div class="roster-add-row" id="rosterAddRow" style="display:none">
+        <input class="roster-input" id="rosterInput" placeholder="Name…" onkeydown="if(event.key==='Enter') confirmRosterAdd()"/>
+        <button class="roster-confirm-btn" onclick="confirmRosterAdd()">Add</button>
+      </div>
     </div>
-    <div class="assign-lanes" id="assignLanes"></div>
+    <!-- Lane drop zones -->
+    <div class="assign-lanes-area" id="assignLanes"></div>
   </div>
 
   <!-- ── PRESETS SCREEN ── -->
@@ -1405,27 +1498,28 @@
 <script>
 // ── STATE ──
 let lanes = [
-  { id:1, swimmers:['Alex R.', 'Jamie L.'], blocks:[
+  { id:1, swimmers:[], blocks:[
     {type:'sprint', name:'8×50 Free', sub:'on :50', l:3, w:13},
     {type:'rest', name:'Rest', sub:'2 min', l:17, w:7},
     {type:'sprint', name:'8×50 Free', sub:'on :50', l:25, w:13},
   ]},
-  { id:2, swimmers:['Sam K.'], blocks:[
+  { id:2, swimmers:[], blocks:[
     {type:'tech', name:'Catch Up', sub:'drill', l:3, w:11},
     {type:'sprint', name:'8×50 Fly', sub:'Sprint', l:16, w:13},
     {type:'rest', name:'Rest', sub:'2 min', l:30, w:7},
   ]},
-  { id:3, swimmers:['Casey M.', 'Drew P.'], blocks:[
+  { id:3, swimmers:[], blocks:[
     {type:'im', name:'4×100 IM', sub:'on 1:40', l:3, w:17},
     {type:'rest', name:'Rest', sub:'2 min', l:21, w:7},
     {type:'im', name:'4×200 IM', sub:'on 3:20', l:29, w:22},
   ]},
-  { id:4, swimmers:['Jordan T.'], blocks:[
+  { id:4, swimmers:[], blocks:[
     {type:'aerobic', name:'600 Free', sub:'steady', l:3, w:20},
     {type:'rest', name:'Rest', sub:'2 min', l:24, w:7},
     {type:'tech', name:'Legs Only', sub:'8×50 kick', l:32, w:13},
   ]},
 ];
+let unassigned = ['Alex R.', 'Jamie L.', 'Sam K.', 'Casey M.', 'Drew P.', 'Jordan T.'];
 let clipboard = null;
 let customType = 'sprint';
 let sessionName = 'Tuesday 4:00 – 5:30 pm';
@@ -1570,34 +1664,10 @@ function addLane() {
 
 function removeLane() {
   if (lanes.length <= 1) { showToast('Must have at least 1 lane'); return; }
-  document.getElementById('removeLaneInput').value = '';
-  document.getElementById('removeLaneModal').classList.add('open');
-}
-
-function confirmRemoveLane() {
-  const laneId = parseInt(document.getElementById('removeLaneInput').value, 10);
-  if (!laneId) { showToast('Enter lane number'); return; }
-
-  const laneIdx = lanes.findIndex(l => l.id === laneId);
-  if (laneIdx === -1) { showToast('Lane not found'); return; }
-
-  // Remove the lane
-  lanes.splice(laneIdx, 1);
-
-  // Renumber all lanes starting from 1
-  lanes.forEach((lane, idx) => {
-    lane.id = idx + 1;
-  });
-
-  // Update nextLaneId to be one more than the highest lane number
-  nextLaneId = lanes.length + 1;
-
+  lanes.pop();
   renderLanes();
-  showToast(`Lane ${laneId} removed and lanes renumbered`);
-  closeRemoveLaneModal();
+  showToast('Lane removed');
 }
-
-function closeRemoveLaneModal() { document.getElementById('removeLaneModal').classList.remove('open'); }
 
 // Palette drag setup
 document.querySelectorAll('.chip[draggable]').forEach(chip => {
@@ -1679,49 +1749,102 @@ function saveCustom() {
 
 // ── ASSIGNMENTS ──
 function renderAssignments() {
-  const el = document.getElementById('assignLanes');
+  renderRoster();
+  renderLaneZones();
+}
+
+function renderRoster() {
+  const el = document.getElementById('rosterList');
+  if (!el) return;
   el.innerHTML = '';
-  lanes.forEach((lane, idx) => {
-    const card = document.createElement('div');
-    card.className = 'assign-lane-card';
-    card.innerHTML = `
-      <div class="assign-lane-num">${idx + 1}</div>
-      <div class="assign-lane-body">
-        <div class="assign-lane-label">Lane ${idx + 1}</div>
-        <div class="assign-swimmers" id="swimmers-${idx}"></div>
-        <div class="add-swimmer-row">
-          <input class="add-swimmer-input" id="swimInput-${idx}" placeholder="Add swimmer name…" onkeydown="if(event.key==='Enter') addSwimmer(${idx})"/>
-          <button class="add-swimmer-btn" onclick="addSwimmer(${idx})">Add</button>
-        </div>
-      </div>
-    `;
-    el.appendChild(card);
-    renderSwimmerTags(idx);
+  if (unassigned.length === 0) {
+    el.innerHTML = '<div class="roster-empty">All swimmers assigned</div>';
+    return;
+  }
+  unassigned.forEach((name, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'roster-chip';
+    chip.draggable = true;
+    chip.innerHTML = `<span class="roster-chip-name">${name}</span><div class="roster-chip-del" onclick="deleteFromRoster(${i})">✕</div>`;
+    chip.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('application/swimmer', JSON.stringify({ name, fromRoster: true }));
+    });
+    el.appendChild(chip);
   });
 }
 
-function renderSwimmerTags(idx) {
-  const el = document.getElementById(`swimmers-${idx}`);
+function renderLaneZones() {
+  const el = document.getElementById('assignLanes');
   if (!el) return;
-  el.innerHTML = lanes[idx].swimmers.map((s, si) =>
-    `<div class="swimmer-tag">${s}<div class="swimmer-remove" onclick="removeSwimmer(${idx},${si})">✕</div></div>`
-  ).join('');
+  el.innerHTML = '';
+  lanes.forEach((lane, idx) => {
+    const zone = document.createElement('div');
+    zone.className = 'assign-zone';
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('drag-over');
+      const data = JSON.parse(e.dataTransfer.getData('application/swimmer'));
+      if (data.fromRoster) {
+        const ri = unassigned.indexOf(data.name);
+        if (ri !== -1) unassigned.splice(ri, 1);
+      }
+      lanes[idx].swimmers.push(data.name);
+      renderAssignments();
+      renderLanes();
+    });
+
+    const numEl = document.createElement('div');
+    numEl.className = 'assign-zone-num';
+    numEl.textContent = idx + 1;
+
+    const chipsEl = document.createElement('div');
+    chipsEl.className = 'assign-zone-chips';
+
+    if (lane.swimmers.length === 0) {
+      chipsEl.innerHTML = '<span class="assign-zone-empty">Drop swimmers here</span>';
+    } else {
+      lane.swimmers.forEach((name, si) => {
+        const chip = document.createElement('div');
+        chip.className = 'assigned-chip';
+        chip.innerHTML = `${name}<div class="assigned-chip-x" onclick="unassignSwimmer(${idx},${si})">✕</div>`;
+        chipsEl.appendChild(chip);
+      });
+    }
+
+    zone.appendChild(numEl);
+    zone.appendChild(chipsEl);
+    el.appendChild(zone);
+  });
 }
 
-function addSwimmer(idx) {
-  const input = document.getElementById(`swimInput-${idx}`);
+function unassignSwimmer(laneIdx, si) {
+  const name = lanes[laneIdx].swimmers.splice(si, 1)[0];
+  unassigned.push(name);
+  renderAssignments();
+  renderLanes();
+}
+
+function deleteFromRoster(i) {
+  unassigned.splice(i, 1);
+  renderRoster();
+}
+
+function toggleRosterAdd() {
+  const row = document.getElementById('rosterAddRow');
+  const visible = row.style.display !== 'none';
+  row.style.display = visible ? 'none' : 'flex';
+  if (!visible) setTimeout(() => document.getElementById('rosterInput').focus(), 50);
+}
+
+function confirmRosterAdd() {
+  const input = document.getElementById('rosterInput');
   const name = input.value.trim();
   if (!name) return;
-  lanes[idx].swimmers.push(name);
+  unassigned.push(name);
   input.value = '';
-  renderSwimmerTags(idx);
-  renderLanes();
-}
-
-function removeSwimmer(idx, si) {
-  lanes[idx].swimmers.splice(si, 1);
-  renderSwimmerTags(idx);
-  renderLanes();
+  renderRoster();
 }
 
 // ── PRESETS ──

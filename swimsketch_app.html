@@ -375,7 +375,6 @@
     display: flex;
     flex-direction: column;
     min-width: 0;
-    border-right: 1.5px solid var(--border);
   }
 
   .lanes-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
@@ -491,7 +490,7 @@
 
   /* Triangle bottom bar */
   .triangle-bar {
-    height: 110px;
+    height: 130px;
     background: var(--bg);
     border-top: 2px solid var(--border);
     display: flex;
@@ -500,6 +499,84 @@
     gap: 20px;
     flex-shrink: 0;
   }
+  canvas#triCanvas { display: block; align-self: stretch; cursor: crosshair; }
+  /* Lane +/− compact control */
+  .lane-pm-control {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+  .lane-pm-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .lane-pm-group {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .lane-pm-count {
+    font-family: 'Space Mono', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ink);
+    min-width: 22px;
+    text-align: center;
+  }
+  .pm-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    font-size: 18px;
+    font-weight: 400;
+    color: var(--ink);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.12s;
+    line-height: 1;
+    padding-bottom: 1px;
+  }
+  .pm-btn:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
+  /* Lane copy/paste icons */
+  .lane-icons {
+    width: 46px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    border-left: 1.5px solid var(--border);
+    background: var(--bg);
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .lane-row:hover .lane-icons { opacity: 1; }
+  .lane-icon-btn {
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.12s;
+    padding: 0;
+  }
+  .lane-icon-btn:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .lane-icon-btn.copy-active { background: var(--aerobic); color: #fff; border-color: var(--aerobic); }
   .tri-label {
     font-family: 'Space Mono', monospace;
     font-size: 9px;
@@ -508,7 +585,6 @@
     color: var(--muted);
     white-space: nowrap;
   }
-  canvas#triCanvas { cursor: crosshair; }
   .tri-readout {
     display: flex;
     gap: 14px;
@@ -1072,15 +1148,18 @@
     <!-- Center -->
     <div class="planner-center">
       <div class="lanes-area" id="lanesArea"></div>
-      <div class="lane-actions">
-        <span style="font-size:10px;color:var(--muted);font-weight:600;">Lanes:</span>
-        <button class="lane-action-btn" onclick="addLane()">+ Add Lane</button>
-        <button class="lane-action-btn danger" onclick="removeLane()">− Remove Lane</button>
-      </div>
       <div class="triangle-bar">
         <div class="tri-label">Practice<br>Balance</div>
-        <canvas id="triCanvas" width="100" height="90"></canvas>
+        <canvas id="triCanvas" width="116" height="122"></canvas>
         <div class="tri-readout" id="triReadout"></div>
+        <div class="lane-pm-control">
+          <div class="lane-pm-label">Lanes</div>
+          <div class="lane-pm-group">
+            <button class="pm-btn" onclick="removeLane()">−</button>
+            <div class="lane-pm-count" id="laneCount">4</div>
+            <button class="pm-btn" onclick="addLane()">+</button>
+          </div>
+        </div>
       </div>
       <div class="legend">
         <div class="leg-item"><div class="leg-dot" style="background:var(--sprint)"></div>Sprint</div>
@@ -1091,11 +1170,6 @@
       </div>
     </div>
 
-    <!-- Right panel -->
-    <aside class="right-panel">
-      <div class="rp-header">Lanes</div>
-      <div class="rp-lanes" id="rpLanes"></div>
-    </aside>
   </div>
 
   <!-- ── ASSIGNMENTS SCREEN ── -->
@@ -1165,7 +1239,6 @@ let lanes = [
     {type:'tech', name:'Legs Only', sub:'8×50 kick', l:32, w:13},
   ]},
 ];
-let nextLaneId = 5;
 let clipboard = null;
 let customType = 'sprint';
 let sessionName = 'Tuesday 4:00 – 5:30 pm';
@@ -1202,21 +1275,21 @@ function saveSession() {
 function closeSessionModal() { document.getElementById('sessionModal').classList.remove('open'); }
 
 // ── LANES RENDER ──
+const copySVG = `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="4" y="0" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4"/><rect x="0" y="4" width="9" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4" fill="var(--bg)"/></svg>`;
+const pasteSVG = `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><rect x="1" y="3" width="11" height="10" rx="1.5" stroke="currentColor" stroke-width="1.4"/><rect x="4" y="1" width="5" height="4" rx="1" stroke="currentColor" stroke-width="1.4" fill="var(--bg)"/></svg>`;
+
 function renderLanes() {
   const area = document.getElementById('lanesArea');
-  const rp = document.getElementById('rpLanes');
   area.innerHTML = '';
-  rp.innerHTML = '';
 
   lanes.forEach((lane, idx) => {
-    // Lane row
     const row = document.createElement('div');
     row.className = 'lane-row';
     row.dataset.laneIdx = idx;
 
     const label = document.createElement('div');
     label.className = 'lane-label';
-    label.innerHTML = `<div class="lane-num">${lane.id}</div><div class="lane-swimmers">${lane.swimmers.join(', ') || 'No swimmers'}</div>`;
+    label.innerHTML = `<div class="lane-num">${idx + 1}</div><div class="lane-swimmers">${lane.swimmers.join(', ') || 'No swimmers'}</div>`;
 
     const track = document.createElement('div');
     track.className = 'lane-track';
@@ -1243,20 +1316,22 @@ function renderLanes() {
       track.appendChild(bl);
     });
 
+    // Copy/paste icon buttons
+    const icons = document.createElement('div');
+    icons.className = 'lane-icons';
+    icons.innerHTML = `
+      <button class="lane-icon-btn" id="copy-${idx}" title="Copy lane" onclick="copyLane(${idx})">${copySVG}</button>
+      <button class="lane-icon-btn" title="Paste lane" onclick="pasteLane(${idx})">${pasteSVG}</button>
+    `;
+
     row.appendChild(label);
     row.appendChild(track);
+    row.appendChild(icons);
     area.appendChild(row);
-
-    // Right panel
-    const rpRow = document.createElement('div');
-    rpRow.className = 'rp-lane';
-    rpRow.innerHTML = `
-      <div class="rp-lane-label">Lane ${lane.id}</div>
-      <button class="cp-btn" id="copy-${idx}" onclick="copyLane(${idx})">Copy</button>
-      <button class="cp-btn" onclick="pasteLane(${idx})">Paste</button>
-    `;
-    rp.appendChild(rpRow);
   });
+
+  const countEl = document.getElementById('laneCount');
+  if (countEl) countEl.textContent = lanes.length;
 }
 
 function removeBlock(laneIdx, blockIdx, e) {
@@ -1267,21 +1342,22 @@ function removeBlock(laneIdx, blockIdx, e) {
 
 function copyLane(idx) {
   clipboard = JSON.parse(JSON.stringify(lanes[idx].blocks));
-  document.querySelectorAll('.cp-btn').forEach(b => b.classList.remove('copy-active'));
+  document.querySelectorAll('.lane-icon-btn').forEach(b => b.classList.remove('copy-active'));
   const btn = document.getElementById(`copy-${idx}`);
   if (btn) btn.classList.add('copy-active');
-  showToast(`Copied Lane ${lanes[idx].id}`);
+  showToast(`Copied Lane ${idx + 1}`);
 }
 
 function pasteLane(idx) {
   if (!clipboard) { showToast('Nothing to paste — copy a lane first'); return; }
   lanes[idx].blocks = JSON.parse(JSON.stringify(clipboard));
   renderLanes();
-  showToast(`Pasted to Lane ${lanes[idx].id}`);
+  showToast(`Pasted to Lane ${idx + 1}`);
 }
 
 function addLane() {
-  lanes.push({ id: nextLaneId++, swimmers: [], blocks: [] });
+  if (lanes.length >= 8) { showToast('Maximum 8 lanes'); return; }
+  lanes.push({ swimmers: [], blocks: [] });
   renderLanes();
   showToast('Lane added');
 }
@@ -1361,9 +1437,9 @@ function renderAssignments() {
     const card = document.createElement('div');
     card.className = 'assign-lane-card';
     card.innerHTML = `
-      <div class="assign-lane-num">${lane.id}</div>
+      <div class="assign-lane-num">${idx + 1}</div>
       <div class="assign-lane-body">
-        <div class="assign-lane-label">Lane ${lane.id}</div>
+        <div class="assign-lane-label">Lane ${idx + 1}</div>
         <div class="assign-swimmers" id="swimmers-${idx}"></div>
         <div class="add-swimmer-row">
           <input class="add-swimmer-input" id="swimInput-${idx}" placeholder="Add swimmer name…" onkeydown="if(event.key==='Enter') addSwimmer(${idx})"/>

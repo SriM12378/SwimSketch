@@ -887,9 +887,9 @@
     gap: 12px;
   }
   .presets-title {
-    font-family: 'Space Mono', monospace;
+    font-family: 'DM Sans', sans-serif;
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 600;
     color: var(--ink);
     flex: 1;
   }
@@ -2052,12 +2052,10 @@ function confirmRosterAdd() {
 // ── PRESETS ──
 function generatePresetPlanHtml(lanes) {
   return lanes.map(lane => {
-    const swimmers = lane.swimmers.length ? lane.swimmers.join(', ') : 'No swimmers';
     const laneHtml = `
       <div class="plan-lane">
         <div class="plan-lane-header">
           <span class="plan-lane-num">${lane.id}</span>
-          <span class="plan-swimmers">${swimmers}</span>
         </div>
         <div class="plan-sets">
           ${lane.blocks.length ? lane.blocks.map((b, i) => `

@@ -2599,6 +2599,9 @@ function saveBlockEdit() {
   const { laneIdx, blockIdx } = editingBlock;
   lanes[laneIdx].blocks[blockIdx].startMin = parseInt(document.getElementById('blockEditStart').value) || 0;
   lanes[laneIdx].blocks[blockIdx].durationMin = parseInt(document.getElementById('blockEditDuration').value) || 15;
+  if (lanes[laneIdx].blocks[blockIdx].type === 'rest') {
+    lanes[laneIdx].blocks[blockIdx].sub = `${lanes[laneIdx].blocks[blockIdx].durationMin} min`;
+  }
   editingBlock = null;
   document.getElementById('blockEditModal').classList.remove('open');
   renderLanes();

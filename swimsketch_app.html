@@ -22,7 +22,7 @@
     --im: #7C3AED;
     --im-light: #EDE9FE;
     --rest: #9CA3AF;
-    --rest-light: #FEF3C7;
+    --rest-light: #F3F4F6;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -461,11 +461,11 @@
   .swim-block.tech    { background: var(--tech); }
   .swim-block.aerobic { background: var(--aerobic); }
   .swim-block.im      { background: var(--im); }
-  .swim-block.rest    { background: repeating-linear-gradient(45deg, #FEF3C7, #FEF3C7 6px, #FDE68A 6px, #FDE68A 12px); border: 1.5px dashed #D97706; }
+  .swim-block.rest    { background: var(--rest-light); border: 1.5px dashed var(--border); }
   .b-name { font-size: 10px; font-weight: 700; color: #fff; text-align: center; line-height: 1.2; white-space: nowrap; }
   .b-sub  { font-size: 8px; color: rgba(255,255,255,0.8); }
-  .swim-block.rest .b-name { color: #92400E; }
-  .swim-block.rest .b-sub  { color: #B45309; }
+  .swim-block.rest .b-name { color: var(--muted); }
+  .swim-block.rest .b-sub  { color: var(--muted); }
 
   /* Remove block button */
   .block-remove {
@@ -1418,7 +1418,7 @@
         <div class="leg-item"><div class="leg-dot" style="background:var(--tech)"></div>Technique</div>
         <div class="leg-item"><div class="leg-dot" style="background:var(--aerobic)"></div>Aerobic</div>
         <div class="leg-item"><div class="leg-dot" style="background:var(--im)"></div>IM</div>
-        <div class="leg-item"><div class="leg-dot" style="background:repeating-linear-gradient(45deg,#FEF3C7,#FEF3C7 3px,#FDE68A 3px,#FDE68A 6px);border:1px dashed #D97706"></div>Rest</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--rest-light);border:1px dashed var(--border)"></div>Rest</div>
       </div>
     </div>
 

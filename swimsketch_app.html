@@ -1620,28 +1620,28 @@ let sessionName = 'Tuesday 4:00 – 5:30 pm';
 
 let presets = [
   { id:1, name:'Sprint Heavy', meta:'High intensity · 90 min', dots:['#E8432D','#E8432D','#D97B2B','#9CA3AF'], lanes: [
-    { id:1, swimmers:['Alex R.', 'Jamie L.'], blocks:[{type:'sprint', name:'8×50 Free', sub:'on :50', l:3, w:13},{type:'rest', name:'Rest', sub:'2 min', l:17, w:7},{type:'sprint', name:'8×50 Free', sub:'on :50', l:25, w:13}]},
-    { id:2, swimmers:['Sam K.'], blocks:[{type:'tech', name:'Catch Up', sub:'drill', l:3, w:11},{type:'sprint', name:'8×50 Fly', sub:'Sprint', l:16, w:13},{type:'rest', name:'Rest', sub:'2 min', l:30, w:7}]},
-    { id:3, swimmers:['Casey M.', 'Drew P.'], blocks:[{type:'im', name:'4×100 IM', sub:'on 1:40', l:3, w:17},{type:'rest', name:'Rest', sub:'2 min', l:21, w:7},{type:'im', name:'4×200 IM', sub:'on 3:20', l:29, w:22}]},
-    { id:4, swimmers:['Jordan T.'], blocks:[{type:'aerobic', name:'600 Free', sub:'steady', l:3, w:20},{type:'rest', name:'Rest', sub:'2 min', l:24, w:7},{type:'tech', name:'Legs Only', sub:'8×50 kick', l:32, w:13}]}
+    { id:1, swimmers:['Alex R.', 'Jamie L.'], blocks:[{type:'aerobic', name:'300 Free', sub:'warm-up', l:0, w:15},{type:'sprint', name:'8×50 Free', sub:'on :50', l:15, w:25},{type:'rest', name:'Rest', sub:'9 min', l:40, w:10},{type:'sprint', name:'8×100 Free', sub:'on 2:00', l:50, w:25},{type:'rest', name:'Rest', sub:'9 min', l:75, w:10},{type:'tech', name:'Kick', sub:'cool down', l:85, w:15}]},
+    { id:2, swimmers:['Sam K.'], blocks:[{type:'tech', name:'Catch Up', sub:'drill', l:0, w:20},{type:'sprint', name:'8×50 Fly', sub:'Sprint', l:20, w:30},{type:'rest', name:'Rest', sub:'9 min', l:50, w:10},{type:'tech', name:'One Arm Fly', sub:'drill', l:60, w:20},{type:'rest', name:'Rest', sub:'9 min', l:80, w:10},{type:'aerobic', name:'200 Free', sub:'easy', l:90, w:10}]},
+    { id:3, swimmers:['Casey M.', 'Drew P.'], blocks:[{type:'im', name:'4×50 IM', sub:'on :45', l:0, w:20},{type:'rest', name:'Rest', sub:'9 min', l:20, w:10},{type:'im', name:'4×100 IM', sub:'on 1:40', l:30, w:20},{type:'rest', name:'Rest', sub:'9 min', l:50, w:10},{type:'im', name:'4×200 IM', sub:'on 3:20', l:60, w:20},{type:'rest', name:'Rest', sub:'18 min', l:80, w:20}]},
+    { id:4, swimmers:['Jordan T.'], blocks:[{type:'aerobic', name:'400 Free', sub:'steady', l:0, w:30},{type:'tech', name:'Legs Only', sub:'8×50 kick', l:30, w:20},{type:'rest', name:'Rest', sub:'9 min', l:50, w:10},{type:'aerobic', name:'200 Free', sub:'steady', l:60, w:20},{type:'rest', name:'Rest', sub:'9 min', l:80, w:10},{type:'tech', name:'Catch Up', sub:'drill', l:90, w:10}]}
   ], type:'all' },
-  { id:2, name:'Technique Focus', meta:'Drill-heavy · 75 min', dots:['#D97B2B','#D97B2B','#9CA3AF','#9CA3AF'], lanes: [
-    { id:1, swimmers:['Alex R.', 'Jamie L.'], blocks:[{type:'tech', name:'Catch Up', sub:'drill', l:3, w:11},{type:'tech', name:'One Arm Fly', sub:'drill', l:16, w:11},{type:'rest', name:'Rest', sub:'2 min', l:29, w:7}]},
-    { id:2, swimmers:['Sam K.'], blocks:[{type:'tech', name:'Legs Only', sub:'8×50 kick', l:3, w:13},{type:'tech', name:'Catch Up', sub:'drill', l:18, w:11},{type:'rest', name:'Rest', sub:'2 min', l:31, w:7}]},
-    { id:3, swimmers:['Casey M.', 'Drew P.'], blocks:[{type:'tech', name:'One Arm Fly', sub:'drill', l:3, w:11},{type:'tech', name:'Legs Only', sub:'8×50 kick', l:16, w:13},{type:'rest', name:'Rest', sub:'2 min', l:31, w:7}]},
-    { id:4, swimmers:['Jordan T.'], blocks:[{type:'tech', name:'Catch Up', sub:'drill', l:3, w:11},{type:'tech', name:'One Arm Fly', sub:'drill', l:16, w:11},{type:'rest', name:'Rest', sub:'2 min', l:29, w:7}]}
+  { id:2, name:'Technique Focus', meta:'Drill-heavy · 90 min', dots:['#D97B2B','#D97B2B','#9CA3AF','#9CA3AF'], lanes: [
+    { id:1, swimmers:['Alex R.', 'Jamie L.'], blocks:[{type:'tech', name:'Catch Up', sub:'drill', l:0, w:20},{type:'tech', name:'One Arm Fly', sub:'drill', l:20, w:20},{type:'rest', name:'Rest', sub:'9 min', l:40, w:10},{type:'tech', name:'Legs Only', sub:'8×50 kick', l:50, w:20},{type:'tech', name:'Pull', sub:'drill', l:70, w:20},{type:'rest', name:'Rest', sub:'9 min', l:90, w:10}]},
+    { id:2, swimmers:['Sam K.'], blocks:[{type:'tech', name:'Legs Only', sub:'8×50 kick', l:0, w:20},{type:'tech', name:'Catch Up', sub:'drill', l:20, w:20},{type:'rest', name:'Rest', sub:'9 min', l:40, w:10},{type:'tech', name:'One Arm Fly', sub:'drill', l:50, w:20},{type:'tech', name:'Pull', sub:'drill', l:70, w:20},{type:'rest', name:'Rest', sub:'9 min', l:90, w:10}]},
+    { id:3, swimmers:['Casey M.', 'Drew P.'], blocks:[{type:'tech', name:'One Arm Fly', sub:'drill', l:0, w:20},{type:'tech', name:'Legs Only', sub:'8×50 kick', l:20, w:20},{type:'rest', name:'Rest', sub:'9 min', l:40, w:10},{type:'tech', name:'Catch Up', sub:'drill', l:50, w:20},{type:'tech', name:'Pull', sub:'drill', l:70, w:20},{type:'rest', name:'Rest', sub:'9 min', l:90, w:10}]},
+    { id:4, swimmers:['Jordan T.'], blocks:[{type:'tech', name:'Catch Up', sub:'drill', l:0, w:20},{type:'tech', name:'One Arm Fly', sub:'drill', l:20, w:20},{type:'rest', name:'Rest', sub:'9 min', l:40, w:10},{type:'tech', name:'Legs Only', sub:'8×50 kick', l:50, w:20},{type:'tech', name:'Pull', sub:'drill', l:70, w:20},{type:'rest', name:'Rest', sub:'9 min', l:90, w:10}]}
   ], type:'all' },
   { id:3, name:'Aerobic Base', meta:'Steady state · 90 min', dots:['#2B7DD9','#2B7DD9','#2B7DD9','#9CA3AF'], lanes: [
-    { id:1, swimmers:['Alex R.', 'Jamie L.'], blocks:[{type:'aerobic', name:'600 Free', sub:'steady', l:3, w:20},{type:'rest', name:'Rest', sub:'2 min', l:24, w:7}]},
-    { id:2, swimmers:['Sam K.'], blocks:[{type:'aerobic', name:'600 Free', sub:'steady', l:3, w:20},{type:'rest', name:'Rest', sub:'2 min', l:24, w:7}]},
-    { id:3, swimmers:['Casey M.', 'Drew P.'], blocks:[{type:'aerobic', name:'600 Free', sub:'steady', l:3, w:20},{type:'rest', name:'Rest', sub:'2 min', l:24, w:7}]},
-    { id:4, swimmers:['Jordan T.'], blocks:[{type:'aerobic', name:'600 Free', sub:'steady', l:3, w:20},{type:'rest', name:'Rest', sub:'2 min', l:24, w:7}]}
+    { id:1, swimmers:['Alex R.', 'Jamie L.'], blocks:[{type:'aerobic', name:'200 Free', sub:'steady', l:0, w:25},{type:'rest', name:'Rest', sub:'5 min', l:25, w:5},{type:'aerobic', name:'200 Free', sub:'steady', l:30, w:25},{type:'rest', name:'Rest', sub:'5 min', l:55, w:5},{type:'aerobic', name:'200 Free', sub:'steady', l:60, w:25},{type:'rest', name:'Rest', sub:'14 min', l:85, w:15}]},
+    { id:2, swimmers:['Sam K.'], blocks:[{type:'aerobic', name:'200 Free', sub:'steady', l:0, w:25},{type:'rest', name:'Rest', sub:'5 min', l:25, w:5},{type:'aerobic', name:'200 Free', sub:'steady', l:30, w:25},{type:'rest', name:'Rest', sub:'5 min', l:55, w:5},{type:'aerobic', name:'200 Free', sub:'steady', l:60, w:25},{type:'rest', name:'Rest', sub:'14 min', l:85, w:15}]},
+    { id:3, swimmers:['Casey M.', 'Drew P.'], blocks:[{type:'aerobic', name:'200 Free', sub:'steady', l:0, w:25},{type:'rest', name:'Rest', sub:'5 min', l:25, w:5},{type:'aerobic', name:'200 Free', sub:'steady', l:30, w:25},{type:'rest', name:'Rest', sub:'5 min', l:55, w:5},{type:'aerobic', name:'200 Free', sub:'steady', l:60, w:25},{type:'rest', name:'Rest', sub:'14 min', l:85, w:15}]},
+    { id:4, swimmers:['Jordan T.'], blocks:[{type:'aerobic', name:'200 Free', sub:'steady', l:0, w:25},{type:'rest', name:'Rest', sub:'5 min', l:25, w:5},{type:'aerobic', name:'200 Free', sub:'steady', l:30, w:25},{type:'rest', name:'Rest', sub:'5 min', l:55, w:5},{type:'aerobic', name:'200 Free', sub:'steady', l:60, w:25},{type:'rest', name:'Rest', sub:'14 min', l:85, w:15}]}
   ], type:'all' },
   { id:4, name:'IM Builder', meta:'All strokes · 90 min', dots:['#7C3AED','#7C3AED','#D97B2B','#9CA3AF'], lanes: [
-    { id:1, swimmers:['Alex R.', 'Jamie L.'], blocks:[{type:'im', name:'4×100 IM', sub:'on 1:40', l:3, w:17},{type:'rest', name:'Rest', sub:'2 min', l:21, w:7},{type:'im', name:'4×200 IM', sub:'on 3:20', l:29, w:22}]},
-    { id:2, swimmers:['Sam K.'], blocks:[{type:'im', name:'4×100 IM', sub:'on 1:40', l:3, w:17},{type:'rest', name:'Rest', sub:'2 min', l:21, w:7},{type:'im', name:'4×200 IM', sub:'on 3:20', l:29, w:22}]},
-    { id:3, swimmers:['Casey M.', 'Drew P.'], blocks:[{type:'im', name:'4×100 IM', sub:'on 1:40', l:3, w:17},{type:'rest', name:'Rest', sub:'2 min', l:21, w:7},{type:'im', name:'4×200 IM', sub:'on 3:20', l:29, w:22}]},
-    { id:4, swimmers:['Jordan T.'], blocks:[{type:'im', name:'4×100 IM', sub:'on 1:40', l:3, w:17},{type:'rest', name:'Rest', sub:'2 min', l:21, w:7},{type:'im', name:'4×200 IM', sub:'on 3:20', l:29, w:22}]}
+    { id:1, swimmers:['Alex R.', 'Jamie L.'], blocks:[{type:'im', name:'4×50 IM', sub:'on :45', l:0, w:20},{type:'rest', name:'Rest', sub:'9 min', l:20, w:10},{type:'im', name:'4×100 IM', sub:'on 1:40', l:30, w:20},{type:'rest', name:'Rest', sub:'9 min', l:50, w:10},{type:'im', name:'4×200 IM', sub:'on 3:20', l:60, w:30},{type:'rest', name:'Rest', sub:'9 min', l:90, w:10}]},
+    { id:2, swimmers:['Sam K.'], blocks:[{type:'im', name:'4×50 IM', sub:'on :45', l:0, w:20},{type:'rest', name:'Rest', sub:'9 min', l:20, w:10},{type:'im', name:'4×100 IM', sub:'on 1:40', l:30, w:20},{type:'rest', name:'Rest', sub:'9 min', l:50, w:10},{type:'im', name:'4×200 IM', sub:'on 3:20', l:60, w:30},{type:'rest', name:'Rest', sub:'9 min', l:90, w:10}]},
+    { id:3, swimmers:['Casey M.', 'Drew P.'], blocks:[{type:'im', name:'4×50 IM', sub:'on :45', l:0, w:20},{type:'rest', name:'Rest', sub:'9 min', l:20, w:10},{type:'im', name:'4×100 IM', sub:'on 1:40', l:30, w:20},{type:'rest', name:'Rest', sub:'9 min', l:50, w:10},{type:'im', name:'4×200 IM', sub:'on 3:20', l:60, w:30},{type:'rest', name:'Rest', sub:'9 min', l:90, w:10}]},
+    { id:4, swimmers:['Jordan T.'], blocks:[{type:'im', name:'4×50 IM', sub:'on :45', l:0, w:20},{type:'rest', name:'Rest', sub:'9 min', l:20, w:10},{type:'im', name:'4×100 IM', sub:'on 1:40', l:30, w:20},{type:'rest', name:'Rest', sub:'9 min', l:50, w:10},{type:'im', name:'4×200 IM', sub:'on 3:20', l:60, w:30},{type:'rest', name:'Rest', sub:'9 min', l:90, w:10}]}
   ], type:'all' }
 ];
 let currentPresetId = null;
@@ -1670,12 +1670,19 @@ function parseTimeToMin(timeStr) {
 function migrateBlocks(blocks) {
   return blocks.map(b => {
     if (b.startMin === undefined && b.l !== undefined) {
-      return {
+      const durationMin = Math.max(5, Math.round((b.w || 10) / 100 * practiceDurationMin));
+      const block = {
         type: b.type, name: b.name, sub: b.sub,
         startMin: Math.round((b.l || 0) / 100 * practiceDurationMin),
-        durationMin: Math.max(5, Math.round((b.w || 10) / 100 * practiceDurationMin))
+        durationMin: durationMin,
+        baseDurationMin: durationMin
       };
+      if (block.type === 'rest') {
+        block.sub = `${durationMin} min`;
+      }
+      return block;
     }
+    if (!b.baseDurationMin) b.baseDurationMin = b.durationMin || 15;
     return b;
   });
 }
@@ -1770,7 +1777,8 @@ function renderLanes() {
         name: data.name,
         sub: data.sub,
         startMin: Math.max(0, startMin),
-        durationMin: durationMin
+        durationMin: durationMin,
+        baseDurationMin: durationMin
       });
       renderLanes();
     });
@@ -2599,6 +2607,7 @@ function saveBlockEdit() {
   const { laneIdx, blockIdx } = editingBlock;
   lanes[laneIdx].blocks[blockIdx].startMin = parseInt(document.getElementById('blockEditStart').value) || 0;
   lanes[laneIdx].blocks[blockIdx].durationMin = parseInt(document.getElementById('blockEditDuration').value) || 15;
+  lanes[laneIdx].blocks[blockIdx].baseDurationMin = lanes[laneIdx].blocks[blockIdx].durationMin;
   if (lanes[laneIdx].blocks[blockIdx].type === 'rest') {
     lanes[laneIdx].blocks[blockIdx].sub = `${lanes[laneIdx].blocks[blockIdx].durationMin} min`;
   }
@@ -2705,10 +2714,34 @@ canvas.addEventListener('touchstart', e => { e.preventDefault(); draggingTri=tru
 canvas.addEventListener('touchmove', e => { e.preventDefault(); if(draggingTri) moveDot(e.touches[0]); });
 canvas.addEventListener('touchend', () => draggingTri=false);
 
+function updateBlocksFromWeights(weights) {
+  lanes.forEach(lane => {
+    lane.blocks.forEach(b => {
+      if (b.type in weights) {
+        b.durationMin = Math.max(1, Math.round(b.baseDurationMin * (weights[b.type] / 0.25)));
+      }
+    });
+    // Sort by startMin
+    lane.blocks.sort((a, b) => a.startMin - b.startMin);
+    // Adjust startMin to avoid overlaps
+    let currentStart = 0;
+    lane.blocks.forEach(b => {
+      b.startMin = Math.max(b.startMin, currentStart);
+      currentStart = b.startMin + b.durationMin;
+      if (currentStart > practiceDurationMin) {
+        b.durationMin = Math.max(1, practiceDurationMin - b.startMin);
+        currentStart = b.startMin + b.durationMin;
+      }
+    });
+  });
+  renderLanes();
+}
+
 function moveDot(e) {
   const r = canvas.getBoundingClientRect();
   dot = clamp(e.clientX-r.left, e.clientY-r.top);
   drawTri();
+  updateBlocksFromWeights(getWeights());
 }
 
 // ── SEND TO TEAM ──

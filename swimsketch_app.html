@@ -22,7 +22,7 @@
     --im: #7C3AED;
     --im-light: #EDE9FE;
     --rest: #9CA3AF;
-    --rest-light: #F3F4F6;
+    --rest-light: #FEF3C7;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -461,11 +461,11 @@
   .swim-block.tech    { background: var(--tech); }
   .swim-block.aerobic { background: var(--aerobic); }
   .swim-block.im      { background: var(--im); }
-  .swim-block.rest    { background: var(--rest-light); border: 1.5px dashed var(--border); }
+  .swim-block.rest    { background: repeating-linear-gradient(45deg, #FEF3C7, #FEF3C7 6px, #FDE68A 6px, #FDE68A 12px); border: 1.5px dashed #D97706; }
   .b-name { font-size: 10px; font-weight: 700; color: #fff; text-align: center; line-height: 1.2; white-space: nowrap; }
   .b-sub  { font-size: 8px; color: rgba(255,255,255,0.8); }
-  .swim-block.rest .b-name { color: var(--muted); }
-  .swim-block.rest .b-sub  { color: var(--muted); }
+  .swim-block.rest .b-name { color: #92400E; }
+  .swim-block.rest .b-sub  { color: #B45309; }
 
   /* Remove block button */
   .block-remove {
@@ -1418,7 +1418,7 @@
         <div class="leg-item"><div class="leg-dot" style="background:var(--tech)"></div>Technique</div>
         <div class="leg-item"><div class="leg-dot" style="background:var(--aerobic)"></div>Aerobic</div>
         <div class="leg-item"><div class="leg-dot" style="background:var(--im)"></div>IM</div>
-        <div class="leg-item"><div class="leg-dot" style="background:var(--rest-light);border:1px dashed var(--border)"></div>Rest</div>
+        <div class="leg-item"><div class="leg-dot" style="background:repeating-linear-gradient(45deg,#FEF3C7,#FEF3C7 3px,#FDE68A 3px,#FDE68A 6px);border:1px dashed #D97706"></div>Rest</div>
       </div>
     </div>
 
@@ -1565,7 +1565,7 @@
       <div style="font-size:13px;font-weight:600;color:var(--muted);text-align:center;margin:8px 0 14px;" id="blockEditTimeRange"></div>
       <div style="margin:8px 0;">
         <div class="f-label">Start time</div>
-        <input type="range" id="blockEditStart" min="0" max="85" step="5" style="width:100%;margin:6px 0;accent-color:var(--ink);" oninput="updateBlockEditDisplay()"/>
+        <input type="range" id="blockEditStart" min="0" max="85" step="1" style="width:100%;margin:6px 0;accent-color:var(--ink);" oninput="updateBlockEditDisplay()"/>
         <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--muted);">
           <span id="blockEditStartLabel"></span>
           <span id="blockEditEndBound"></span>
@@ -1608,28 +1608,12 @@ let editingBlock = null; // { laneIdx, blockIdx }
 let nextPresetId = 5; // fix missing variable
 
 let lanes = [
-  { id:1, swimmers:[], blocks:[
-    {type:'sprint', name:'8×50 Free', sub:'on :50', startMin:5, durationMin:20},
-    {type:'rest', name:'Rest', sub:'2 min', startMin:30, durationMin:5},
-    {type:'sprint', name:'8×50 Free', sub:'on :50', startMin:40, durationMin:20},
-  ]},
-  { id:2, swimmers:[], blocks:[
-    {type:'tech', name:'Catch Up', sub:'drill', startMin:5, durationMin:15},
-    {type:'sprint', name:'8×50 Fly', sub:'Sprint', startMin:25, durationMin:20},
-    {type:'rest', name:'Rest', sub:'2 min', startMin:50, durationMin:5},
-  ]},
-  { id:3, swimmers:[], blocks:[
-    {type:'im', name:'4×100 IM', sub:'on 1:40', startMin:5, durationMin:25},
-    {type:'rest', name:'Rest', sub:'2 min', startMin:35, durationMin:5},
-    {type:'im', name:'4×200 IM', sub:'on 3:20', startMin:45, durationMin:30},
-  ]},
-  { id:4, swimmers:[], blocks:[
-    {type:'aerobic', name:'600 Free', sub:'steady', startMin:5, durationMin:25},
-    {type:'rest', name:'Rest', sub:'2 min', startMin:35, durationMin:5},
-    {type:'tech', name:'Legs Only', sub:'8×50 kick', startMin:45, durationMin:20},
-  ]},
+  { id:1, swimmers:[], blocks:[] },
+  { id:2, swimmers:[], blocks:[] },
+  { id:3, swimmers:[], blocks:[] },
+  { id:4, swimmers:[], blocks:[] },
 ];
-let unassigned = ['Alex R.', 'Jamie L.', 'Sam K.', 'Casey M.', 'Drew P.', 'Jordan T.'];
+let unassigned = [];
 let clipboard = null;
 let customType = 'sprint';
 let sessionName = 'Tuesday 4:00 – 5:30 pm';
@@ -1738,10 +1722,11 @@ function renderLanes() {
 
   for (let min = 0; min <= practiceDurationMin; min += 30) {
     const pct = (min / practiceDurationMin) * 100;
+    const isEdge = min <= 0 || min >= practiceDurationMin;
     const tick = document.createElement('div');
     tick.className = 'ruler-tick';
     tick.style.left = pct + '%';
-    tick.innerHTML = `<div class="ruler-tick-line"></div><div class="ruler-tick-label">${formatMinAsTime(practiceStartMin + min)}</div>`;
+    tick.innerHTML = `<div class="ruler-tick-line"></div>${isEdge ? '' : `<div class="ruler-tick-label">${formatMinAsTime(practiceStartMin + min)}</div>`}`;
     rulerTicks.appendChild(tick);
   }
   ruler.appendChild(rulerSpacer);
@@ -1769,21 +1754,22 @@ function renderLanes() {
       row.classList.remove('drag-over');
       let data;
       try { data = JSON.parse(e.dataTransfer.getData('application/swimset')); } catch(err) { return; }
-      const rect = track.getBoundingClientRect();
-      const fracAlong = (e.clientX - rect.left) / rect.width;
       const durationMin = data.durationMin || 15;
-      let dropMin = Math.round(fracAlong * practiceDurationMin / 5) * 5;
-      dropMin = Math.max(0, Math.min(practiceDurationMin - durationMin, dropMin));
 
       if (data.fromLane !== undefined && data.blockIdx !== undefined) {
         lanes[data.fromLane].blocks.splice(data.blockIdx, 1);
       }
 
+      // Place right after the last block in this lane (timeline style)
+      const blocks = lanes[idx].blocks;
+      const lastEnd = blocks.reduce((max, b) => Math.max(max, (b.startMin || 0) + (b.durationMin || 15)), 0);
+      const startMin = Math.min(lastEnd, practiceDurationMin - durationMin);
+
       lanes[idx].blocks.push({
         type: data.type,
         name: data.name,
         sub: data.sub,
-        startMin: dropMin,
+        startMin: Math.max(0, startMin),
         durationMin: durationMin
       });
       renderLanes();
@@ -1872,16 +1858,16 @@ function removeLane() {
   showToast('Lane removed');
 }
 
-// Palette drag setup
-document.querySelectorAll('.chip[draggable]').forEach(chip => {
-  chip.addEventListener('dragstart', e => {
-    e.dataTransfer.setData('application/swimset', JSON.stringify({
-      type: chip.dataset.type,
-      name: chip.dataset.name,
-      sub: chip.dataset.sub,
-      durationMin: parseFloat(chip.dataset.dur) || 15,
-    }));
-  });
+// Palette drag setup — delegated so custom chips work too
+document.getElementById('palette').addEventListener('dragstart', e => {
+  const chip = e.target.closest('.chip');
+  if (!chip || !chip.dataset.type) return;
+  e.dataTransfer.setData('application/swimset', JSON.stringify({
+    type: chip.dataset.type,
+    name: chip.dataset.name,
+    sub: chip.dataset.sub,
+    durationMin: parseFloat(chip.dataset.dur) || 15,
+  }));
 });
 
 // ── CUSTOM MODAL ──
@@ -1919,10 +1905,6 @@ function saveCustom() {
   chip.dataset.stats = stats;
   chip.dataset.dur = String(customDuration || 15);
   chip.innerHTML = `<div class="chip-name">${name}</div>${sub?`<div class="chip-sub">${sub}</div>`:''}${stats?`<div class="chip-stats">${stats}</div>`:''}<div class="chip-pill" style="background:${pillColors[customType]}">${pillLabels[customType]}</div>`;
-  chip.addEventListener('dragstart', e => {
-    e.dataTransfer.setData('application/swimset', JSON.stringify({ type: customType, name, sub, durationMin: customDuration || 15 }));
-  });
-
   const palette = document.getElementById('palette');
 
   const categoryLabels = { sprint: 'Sprint', tech: 'Technique', aerobic: 'Aerobic', im: 'IM', rest: 'Rest' };

@@ -2553,11 +2553,49 @@ function openBlockEditor(laneIdx, blockIdx) {
   editingBlock = { laneIdx, blockIdx };
   const b = lanes[laneIdx].blocks[blockIdx];
   document.getElementById('blockEditTitle').textContent = `Edit: ${b.name}`;
-  const slider = document.getElementById('blockEditStart');
   const dur = b.durationMin || 15;
-  slider.max = Math.max(0, practiceDurationMin - dur);
-  slider.value = Math.min(b.startMin || 0, parseInt(slider.max));
-  document.getElementById('blockEditDuration').value = dur;
+  const blocks = lanes[laneIdx].blocks;
+
+  // Ensure the block's current (possibly triangle-adjusted) duration is in the dropdown
+  const durSelect = document.getElementById('blockEditDuration');
+  const existingCustom = durSelect.querySelector('option[data-custom]');
+  if (existingCustom) existingCustom.remove();
+  if (![...durSelect.options].some(o => parseInt(o.value) === dur)) {
+    const opt = document.createElement('option');
+    opt.value = dur;
+    opt.textContent = `${dur} min`;
+    opt.dataset.custom = '1';
+    let inserted = false;
+    for (let i = 0; i < durSelect.options.length; i++) {
+      if (parseInt(durSelect.options[i].value) > dur) {
+        durSelect.insertBefore(opt, durSelect.options[i]);
+        inserted = true;
+        break;
+      }
+    }
+    if (!inserted) durSelect.appendChild(opt);
+  }
+  durSelect.value = dur;
+
+  // Disable duration options that exceed the available space from this block's start to
+  // the practice end — increasing duration pushes subsequent blocks, so the ceiling is
+  // how much room is left from here to the end of the lane.
+  const availableSpace = practiceDurationMin - (b.startMin || 0);
+  [...durSelect.options].forEach(opt => {
+    opt.disabled = parseInt(opt.value) > availableSpace;
+  });
+
+  // Start slider: can't go before the previous block ends.
+  // No upper bound from the next block — changing start/duration pushes subsequent blocks.
+  const prevBlock = blockIdx > 0 ? blocks[blockIdx - 1] : null;
+  const minStart = prevBlock ? prevBlock.startMin + prevBlock.durationMin : 0;
+  const maxStart = Math.max(minStart, practiceDurationMin - dur);
+
+  const slider = document.getElementById('blockEditStart');
+  slider.min = minStart;
+  slider.max = maxStart;
+  slider.value = Math.max(minStart, Math.min(b.startMin || 0, maxStart));
+
   document.getElementById('blockEditStartLabel').textContent = formatMinAsTime(practiceStartMin);
   document.getElementById('blockEditEndBound').textContent = formatMinAsTime(practiceEndMin);
   updateBlockEditDisplay();
@@ -2565,11 +2603,23 @@ function openBlockEditor(laneIdx, blockIdx) {
 }
 
 function updateBlockEditDisplay() {
-  const start = parseInt(document.getElementById('blockEditStart').value) || 0;
+  if (!editingBlock) return;
+  const { laneIdx, blockIdx } = editingBlock;
   const dur = parseInt(document.getElementById('blockEditDuration').value) || 15;
   const slider = document.getElementById('blockEditStart');
-  slider.max = Math.max(0, practiceDurationMin - dur);
-  if (start > parseInt(slider.max)) slider.value = slider.max;
+  const blocks = lanes[laneIdx].blocks;
+
+  // Recalculate start-slider bounds: only the previous block is a hard wall;
+  // subsequent blocks will be pushed on save.
+  const prevBlock = blockIdx > 0 ? blocks[blockIdx - 1] : null;
+  const minStart = prevBlock ? prevBlock.startMin + prevBlock.durationMin : 0;
+  const maxStart = Math.max(minStart, practiceDurationMin - dur);
+
+  slider.min = minStart;
+  slider.max = maxStart;
+  if (parseInt(slider.value) < minStart) slider.value = minStart;
+  if (parseInt(slider.value) > maxStart) slider.value = maxStart;
+
   const absStart = practiceStartMin + parseInt(slider.value);
   const absEnd = absStart + dur;
   document.getElementById('blockEditTimeRange').textContent =
@@ -2579,12 +2629,31 @@ function updateBlockEditDisplay() {
 function saveBlockEdit() {
   if (!editingBlock) return;
   const { laneIdx, blockIdx } = editingBlock;
-  lanes[laneIdx].blocks[blockIdx].startMin = parseInt(document.getElementById('blockEditStart').value) || 0;
-  lanes[laneIdx].blocks[blockIdx].durationMin = parseInt(document.getElementById('blockEditDuration').value) || 15;
-  lanes[laneIdx].blocks[blockIdx].baseDurationMin = lanes[laneIdx].blocks[blockIdx].durationMin;
-  if (lanes[laneIdx].blocks[blockIdx].type === 'rest') {
-    lanes[laneIdx].blocks[blockIdx].sub = `${lanes[laneIdx].blocks[blockIdx].durationMin} min`;
+  const laneBlocks = lanes[laneIdx].blocks;
+  const block = laneBlocks[blockIdx];
+
+  block.startMin = parseInt(document.getElementById('blockEditStart').value) || 0;
+  block.durationMin = parseInt(document.getElementById('blockEditDuration').value) || 15;
+  block.baseDurationMin = block.durationMin;
+  if (block.type === 'rest') {
+    block.sub = `${block.durationMin} min`;
   }
+
+  // Push every subsequent block so it starts right where the previous one ends.
+  // If a block would extend past the practice end, truncate its duration.
+  let cursor = block.startMin + block.durationMin;
+  for (let i = blockIdx + 1; i < laneBlocks.length; i++) {
+    laneBlocks[i].startMin = cursor;
+    const available = practiceDurationMin - cursor;
+    if (laneBlocks[i].durationMin > available) {
+      laneBlocks[i].durationMin = Math.max(1, available);
+      laneBlocks[i].baseDurationMin = laneBlocks[i].durationMin;
+      if (laneBlocks[i].type === 'rest') laneBlocks[i].sub = `${laneBlocks[i].durationMin} min`;
+    }
+    cursor += laneBlocks[i].durationMin;
+    if (cursor >= practiceDurationMin) break;
+  }
+
   editingBlock = null;
   document.getElementById('blockEditModal').classList.remove('open');
   renderLanes();

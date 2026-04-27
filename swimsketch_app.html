@@ -639,6 +639,65 @@
     letter-spacing: 1px;
     text-transform: uppercase;
   }
+  .tri-set-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    border-left: 1.5px solid var(--border);
+    padding-left: 16px;
+    flex-shrink: 0;
+  }
+  .tri-set-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .tri-set-row {
+    display: flex;
+    gap: 6px;
+    align-items: flex-end;
+  }
+  .tri-set-field {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+  .tri-set-field label {
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .tri-set-field input {
+    width: 42px;
+    padding: 4px 2px;
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    text-align: center;
+    background: var(--surface);
+    color: var(--ink);
+  }
+  .tri-set-field input:focus { border-color: var(--ink); outline: none; }
+  .tri-set-btn {
+    padding: 5px 10px;
+    background: var(--ink);
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .tri-set-btn:hover { background: var(--sprint); }
 
   /* Right panel */
   .right-panel {
@@ -1389,6 +1448,24 @@
         <div class="tri-label">Practice<br>Balance</div>
         <canvas id="triCanvas" width="116" height="122"></canvas>
         <div class="tri-readout" id="triReadout"></div>
+        <div class="tri-set-section">
+          <div class="tri-set-label">Set Ratio</div>
+          <div class="tri-set-row">
+            <div class="tri-set-field">
+              <label style="color:#E8432D">Sprint</label>
+              <input type="number" id="triInputSprint" min="0" max="100" placeholder="—"/>
+            </div>
+            <div class="tri-set-field">
+              <label style="color:#2B7DD9">Aerobic</label>
+              <input type="number" id="triInputAerobic" min="0" max="100" placeholder="—"/>
+            </div>
+            <div class="tri-set-field">
+              <label style="color:#D97B2B">Tech</label>
+              <input type="number" id="triInputTech" min="0" max="100" placeholder="—"/>
+            </div>
+            <button class="tri-set-btn" onclick="applyTriInputs()">Set</button>
+          </div>
+        </div>
         <div class="lane-pm-control">
           <div class="lane-pm-label">Lanes</div>
           <div class="lane-pm-group">
@@ -2736,6 +2813,7 @@ const vT = { x: W-PAD, y: H-PAD,    color:'#D97B2B', label:'Technique' };
 const verts = [vS, vA, vT];
 let dot = { x: (vS.x+vA.x+vT.x)/3, y: (vS.y+vA.y+vT.y)/3 };
 let draggingTri = false;
+let weightsBeforeDrag = null;
 
 function bary(px,py) {
   const [a,b,c] = verts;
@@ -2786,6 +2864,7 @@ function drawTri() {
   const g2 = Math.round(67*w.sprint+125*w.aerobic+123*w.tech);
   const b2 = Math.round(45*w.sprint+217*w.aerobic+43*w.tech);
   ctx.fillStyle = `rgb(${r},${g2},${b2})`; ctx.fill();
+
   updateTriReadout(w);
 }
 
@@ -2805,12 +2884,77 @@ function updateTriReadout(w) {
   `).join('');
 }
 
-canvas.addEventListener('mousedown', e => { if(currentPracticeIsPast) return; draggingTri=true; moveDot(e); });
-canvas.addEventListener('mousemove', e => { if(draggingTri) moveDot(e); });
-canvas.addEventListener('mouseup', () => draggingTri=false);
-canvas.addEventListener('touchstart', e => { if(currentPracticeIsPast) return; e.preventDefault(); draggingTri=true; moveDot(e.touches[0]); });
-canvas.addEventListener('touchmove', e => { e.preventDefault(); if(draggingTri) moveDot(e.touches[0]); });
-canvas.addEventListener('touchend', () => draggingTri=false);
+canvas.addEventListener('mousedown', e => {
+  if (currentPracticeIsPast) return;
+  weightsBeforeDrag = getWeights();
+  draggingTri = true;
+  moveDot(e);
+});
+canvas.addEventListener('mousemove', e => { if (draggingTri) moveDot(e); });
+canvas.addEventListener('mouseup', () => {
+  if (draggingTri && weightsBeforeDrag) {
+    showWeightsDiff(weightsBeforeDrag, getWeights());
+    syncTriInputs();
+  }
+  draggingTri = false;
+  weightsBeforeDrag = null;
+  drawTri();
+});
+canvas.addEventListener('touchstart', e => {
+  if (currentPracticeIsPast) return;
+  e.preventDefault();
+  weightsBeforeDrag = getWeights();
+  draggingTri = true;
+  moveDot(e.touches[0]);
+});
+canvas.addEventListener('touchmove', e => { e.preventDefault(); if (draggingTri) moveDot(e.touches[0]); });
+canvas.addEventListener('touchend', () => {
+  if (draggingTri && weightsBeforeDrag) {
+    showWeightsDiff(weightsBeforeDrag, getWeights());
+    syncTriInputs();
+  }
+  draggingTri = false;
+  weightsBeforeDrag = null;
+  drawTri();
+});
+
+function showWeightsDiff(before, after) {
+  const pct = v => Math.round(v * 100);
+  const parts = [
+    { key: 'sprint',  label: 'Sprint'  },
+    { key: 'aerobic', label: 'Aerobic' },
+    { key: 'tech',    label: 'Tech'    },
+  ].map(({ key, label }) => {
+    const d = pct(after[key]) - pct(before[key]);
+    return d === 0 ? null : `${label} ${d > 0 ? '↑' : '↓'}${Math.abs(d)}%`;
+  }).filter(Boolean);
+  if (parts.length) showToast(parts.join(' · '));
+}
+
+function syncTriInputs() {
+  const w = getWeights();
+  document.getElementById('triInputSprint').value  = Math.round(w.sprint  * 100);
+  document.getElementById('triInputAerobic').value = Math.round(w.aerobic * 100);
+  document.getElementById('triInputTech').value    = Math.round(w.tech    * 100);
+}
+
+function applyTriInputs() {
+  if (currentPracticeIsPast) { showToast("Can't edit a past practice"); return; }
+  const s = parseFloat(document.getElementById('triInputSprint').value)  || 0;
+  const a = parseFloat(document.getElementById('triInputAerobic').value) || 0;
+  const t = parseFloat(document.getElementById('triInputTech').value)    || 0;
+  const total = s + a + t;
+  if (total === 0) { showToast('Enter values for at least one category'); return; }
+  if (total !== 100) { showToast(`Values must sum to 100 (currently ${total})`); return; }
+  const w = { sprint: s / total, aerobic: a / total, tech: t / total };
+  const before = getWeights();
+  dot.x = w.sprint * vS.x + w.aerobic * vA.x + w.tech * vT.x;
+  dot.y = w.sprint * vS.y + w.aerobic * vA.y + w.tech * vT.y;
+  drawTri();
+  updateBlocksFromWeights(w);
+  syncTriInputs();
+  showWeightsDiff(before, w);
+}
 
 function updateBlocksFromWeights(weights) {
   lanes.forEach(lane => {
@@ -2919,6 +3063,7 @@ Object.values(practiceDays).forEach(dayPractices => {
 });
 renderCalendar();
 drawTri();
+syncTriInputs();
 </script>
 </body>
 </html>

@@ -174,6 +174,8 @@
   .cal-day:hover { border-color: var(--ink); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
   .cal-day.empty { background: transparent; border-color: transparent; cursor: default; }
   .cal-day.empty:hover { transform: none; box-shadow: none; }
+  .cal-day.past { opacity: 0.45; cursor: default; }
+  .cal-day.past:hover { border-color: var(--border); transform: none; box-shadow: none; }
   .cal-day.today { border-color: var(--sprint); border-width: 2px; }
   .cal-day.has-practice { background: var(--surface); }
   .cal-day-num {
@@ -423,12 +425,18 @@
     font-size: 14px; font-weight: 700; color: var(--ink);
   }
   .lane-swimmers {
-    font-size: 7px;
-    color: var(--muted);
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--ink);
     text-align: center;
-    line-height: 1.3;
+    line-height: 1.4;
     max-width: 56px;
     overflow: hidden;
+  }
+  .lane-swimmers.empty {
+    font-weight: 400;
+    color: var(--muted);
+    font-style: italic;
   }
   .lane-track {
     flex: 1;
@@ -1248,16 +1256,16 @@
 
   <!-- NAV -->
   <nav class="nav">
-    <button class="nav-session" id="sessionBtn">Tuesday 4:00 – 5:30 pm</button>
+    <button class="nav-session" id="sessionBtn">No practice loaded</button>
     <div class="nav-gap"></div>
-    <button class="nav-btn active" id="navSets" onclick="showScreen('planner', this)">Sets</button>
+    <button class="nav-btn" id="navSets" onclick="showScreen('planner', this)">Sets</button>
     <button class="nav-btn" id="navAssign" onclick="showScreen('assignments', this)">Assignments</button>
     <button class="nav-btn" id="navPresets" onclick="showScreen('presets', this)">Preset</button>
     <button class="send-btn" onclick="sendToTeam()">▶</button>
   </nav>
 
   <!-- ── CALENDAR SCREEN ── -->
-  <div class="screen calendar-screen" id="screen-calendar">
+  <div class="screen calendar-screen active" id="screen-calendar">
     <div class="cal-header">
       <button class="cal-nav-btn" onclick="changeMonth(-1)">← Prev</button>
       <div class="cal-title" id="calTitle"></div>
@@ -1268,7 +1276,7 @@
   </div>
 
   <!-- ── PLANNER SCREEN ── -->
-  <div class="screen planner-screen active" id="screen-planner">
+  <div class="screen planner-screen" id="screen-planner">
 
     <!-- Left Palette -->
     <aside class="palette" id="palette">
@@ -1457,11 +1465,6 @@
     <div class="session-card">
       <h3>Save as Preset</h3>
       <input class="session-input" id="presetNameInput" placeholder="Preset name"/>
-      <div style="margin:10px 0;">
-        <label><input type="radio" name="presetType" value="all" checked> Save entire practice</label><br>
-        <label><input type="radio" name="presetType" value="lane"> Save specific lane: </label>
-        <input type="number" id="presetLaneInput" placeholder="Lane #" min="1" style="width:60px;margin-left:5px;padding:4px;border:1px solid var(--border);border-radius:4px;"/>
-      </div>
       <div class="session-btns">
         <button class="session-ok" onclick="confirmSavePreset()">Save</button>
         <button class="session-cancel" onclick="closeSavePresetModal()">Cancel</button>
@@ -1592,7 +1595,7 @@ let lanes = [
 let unassigned = [];
 let clipboard = null;
 let customType = 'sprint';
-let sessionName = 'Tuesday 4:00 – 5:30 pm';
+let sessionName = 'No practice loaded';
 
 let presets = [
   { id:1, name:'Sprint Heavy', meta:'High intensity · 90 min', dots:['#E8432D','#E8432D','#D97B2B','#9CA3AF'], lanes: [
@@ -1623,6 +1626,22 @@ let presets = [
 let currentPresetId = null;
 
 // ── HELPER FUNCTIONS ──
+function blocksExceedDuration(presetLanes, limitMin) {
+  return presetLanes.some(lane =>
+    lane.blocks.some(b => {
+      let start, dur;
+      if (b.startMin !== undefined) {
+        start = b.startMin;
+        dur = b.durationMin || 15;
+      } else {
+        dur = Math.max(5, Math.round((b.w || 10) / 100 * limitMin));
+        start = Math.round((b.l || 0) / 100 * limitMin);
+      }
+      return (start + dur) > limitMin;
+    })
+  );
+}
+
 function formatMinAsTime(m) {
   const h = Math.floor(m / 60) % 12 || 12;
   const min = m % 60;
@@ -1664,7 +1683,14 @@ function migrateBlocks(blocks) {
 }
 
 // ── SCREEN SWITCHING ──
+function saveLanesToCurrentPractice() {
+  if (loadedPracticeKey === null || loadedPracticeIdx === null) return;
+  if (!practiceDays[loadedPracticeKey]) return;
+  practiceDays[loadedPracticeKey][loadedPracticeIdx].lanes = JSON.parse(JSON.stringify(lanes));
+}
+
 function showScreen(name, btn) {
+  if (name !== 'planner') saveLanesToCurrentPractice();
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -1724,40 +1750,44 @@ function renderLanes() {
 
     const label = document.createElement('div');
     label.className = 'lane-label';
-    label.innerHTML = `<div class="lane-num">${idx + 1}</div><div class="lane-swimmers">${lane.swimmers.join(', ') || 'No swimmers'}</div>`;
+    label.innerHTML = lane.swimmers.length
+      ? `<div class="lane-num">${idx + 1}</div><div class="lane-swimmers">${lane.swimmers.join(', ')}</div>`
+      : `<div class="lane-num">${idx + 1}</div><div class="lane-swimmers empty">No swimmers</div>`;
 
     const track = document.createElement('div');
     track.className = 'lane-track';
     track.dataset.laneIdx = idx;
 
-    track.addEventListener('dragover', e => { e.preventDefault(); row.classList.add('drag-over'); });
-    track.addEventListener('dragleave', () => row.classList.remove('drag-over'));
-    track.addEventListener('drop', e => {
-      e.preventDefault();
-      row.classList.remove('drag-over');
-      let data;
-      try { data = JSON.parse(e.dataTransfer.getData('application/swimset')); } catch(err) { return; }
-      const durationMin = data.durationMin || 15;
+    if (!currentPracticeIsPast) {
+      track.addEventListener('dragover', e => { e.preventDefault(); row.classList.add('drag-over'); });
+      track.addEventListener('dragleave', () => row.classList.remove('drag-over'));
+      track.addEventListener('drop', e => {
+        e.preventDefault();
+        row.classList.remove('drag-over');
+        let data;
+        try { data = JSON.parse(e.dataTransfer.getData('application/swimset')); } catch(err) { return; }
+        const durationMin = data.durationMin || 15;
 
-      if (data.fromLane !== undefined && data.blockIdx !== undefined) {
-        lanes[data.fromLane].blocks.splice(data.blockIdx, 1);
-      }
+        if (data.fromLane !== undefined && data.blockIdx !== undefined) {
+          lanes[data.fromLane].blocks.splice(data.blockIdx, 1);
+        }
 
-      // Place right after the last block in this lane (timeline style)
-      const blocks = lanes[idx].blocks;
-      const lastEnd = blocks.reduce((max, b) => Math.max(max, (b.startMin || 0) + (b.durationMin || 15)), 0);
-      const startMin = Math.min(lastEnd, practiceDurationMin - durationMin);
+        // Place right after the last block in this lane (timeline style)
+        const blocks = lanes[idx].blocks;
+        const lastEnd = blocks.reduce((max, b) => Math.max(max, (b.startMin || 0) + (b.durationMin || 15)), 0);
+        const startMin = Math.min(lastEnd, practiceDurationMin - durationMin);
 
-      lanes[idx].blocks.push({
-        type: data.type,
-        name: data.name,
-        sub: data.sub,
-        startMin: Math.max(0, startMin),
-        durationMin: durationMin,
-        baseDurationMin: durationMin
+        lanes[idx].blocks.push({
+          type: data.type,
+          name: data.name,
+          sub: data.sub,
+          startMin: Math.max(0, startMin),
+          durationMin: durationMin,
+          baseDurationMin: durationMin
+        });
+        renderLanes();
       });
-      renderLanes();
-    });
+    }
 
     lane.blocks.forEach((b, bi) => {
       const leftPct = (b.startMin / practiceDurationMin) * 100;
@@ -1769,33 +1799,35 @@ function renderLanes() {
       bl.style.left = leftPct + '%';
       bl.style.width = widthPct + '%';
       bl.style.overflow = 'hidden';
-      bl.draggable = true;
+      bl.draggable = !currentPracticeIsPast;
 
-      bl.addEventListener('dragstart', e => {
-        e.stopPropagation();
-        e.dataTransfer.setData('application/swimset', JSON.stringify({
-          type: b.type,
-          name: b.name,
-          sub: b.sub,
-          durationMin: b.durationMin,
-          fromLane: idx,
-          blockIdx: bi
-        }));
-      });
+      if (!currentPracticeIsPast) {
+        bl.addEventListener('dragstart', e => {
+          e.stopPropagation();
+          e.dataTransfer.setData('application/swimset', JSON.stringify({
+            type: b.type,
+            name: b.name,
+            sub: b.sub,
+            durationMin: b.durationMin,
+            fromLane: idx,
+            blockIdx: bi
+          }));
+        });
 
-      bl.addEventListener('click', e => {
-        if (e.target.closest('.block-remove')) return;
-        openBlockEditor(idx, bi);
-      });
+        bl.addEventListener('click', e => {
+          if (e.target.closest('.block-remove')) return;
+          openBlockEditor(idx, bi);
+        });
+      }
 
-      bl.innerHTML = `<div class="b-name">${b.name}</div><div class="b-sub">${b.sub}</div><div class="block-remove" onclick="removeBlock(${idx},${bi},event)">✕</div>`;
+      bl.innerHTML = `<div class="b-name">${b.name}</div><div class="b-sub">${b.sub}</div>${!currentPracticeIsPast ? `<div class="block-remove" onclick="removeBlock(${idx},${bi},event)">✕</div>` : ''}`;
 
       track.appendChild(bl);
     });
 
     const icons = document.createElement('div');
     icons.className = 'lane-icons';
-    icons.innerHTML = `
+    icons.innerHTML = currentPracticeIsPast ? '' : `
       <button class="lane-icon-btn" id="copy-${idx}" title="Copy lane" onclick="copyLane(${idx})">${copySVG}</button>
       <button class="lane-icon-btn" title="Paste lane" onclick="pasteLane(${idx})">${pasteSVG}</button>
     `;
@@ -1808,6 +1840,9 @@ function renderLanes() {
 
   const countEl = document.getElementById('laneCount');
   if (countEl) countEl.textContent = lanes.length;
+
+  const triCanvas = document.getElementById('triCanvas');
+  if (triCanvas) triCanvas.style.cursor = currentPracticeIsPast ? 'not-allowed' : 'crosshair';
 }
 
 function removeBlock(laneIdx, blockIdx, e) {
@@ -1825,6 +1860,7 @@ function copyLane(idx) {
 }
 
 function pasteLane(idx) {
+  if (currentPracticeIsPast) { showToast("Can't edit a past practice"); return; }
   if (!clipboard) { showToast('Nothing to paste — copy a lane first'); return; }
   lanes[idx].blocks = JSON.parse(JSON.stringify(clipboard));
   renderLanes();
@@ -1832,6 +1868,7 @@ function pasteLane(idx) {
 }
 
 function addLane() {
+  if (currentPracticeIsPast) { showToast("Can't edit a past practice"); return; }
   if (lanes.length >= 8) { showToast('Maximum 8 lanes'); return; }
   lanes.push({ swimmers: [], blocks: [] });
   renderLanes();
@@ -1839,6 +1876,7 @@ function addLane() {
 }
 
 function removeLane() {
+  if (currentPracticeIsPast) { showToast("Can't edit a past practice"); return; }
   if (lanes.length <= 1) { showToast('Must have at least 1 lane'); return; }
   lanes.pop();
   renderLanes();
@@ -2107,6 +2145,10 @@ function renderPresets() {
 function loadPresetAll(id) {
   const preset = presets.find(p => p.id === id);
   if (!preset) return;
+  if (blocksExceedDuration(preset.lanes, practiceDurationMin)) {
+    showToast(`Preset doesn't fit — it has blocks past the ${practiceDurationMin}-min mark. Shorten the preset or lengthen the practice.`);
+    return;
+  }
   lanes = JSON.parse(JSON.stringify(preset.lanes));
   lanes.forEach(lane => { lane.blocks = migrateBlocks(lane.blocks); });
   renderLanes();
@@ -2129,11 +2171,16 @@ function confirmLoadLane() {
   const preset = presets.find(p => p.id === currentPresetId);
   if (!preset) return;
 
-  const laneIdx = lanes.findIndex(l => l.id === target);
-  if (laneIdx === -1) { showToast('Target lane not found'); return; }
+  const laneIdx = target - 1;
+  if (laneIdx < 0 || laneIdx >= lanes.length) { showToast(`No lane ${target} in current practice`); return; }
 
-  let sourceLane = preset.lanes.find(l => l.id === source) || preset.lanes[0];
-  if (!sourceLane) { showToast('Source lane not found'); return; }
+  const sourceLane = preset.lanes[source - 1] || preset.lanes[0];
+  if (!sourceLane) { showToast('Source lane not found in preset'); return; }
+
+  if (blocksExceedDuration([sourceLane], practiceDurationMin)) {
+    showToast(`Preset lane doesn't fit — it has blocks past the ${practiceDurationMin}-min mark`);
+    return;
+  }
 
   lanes[laneIdx].blocks = migrateBlocks(JSON.parse(JSON.stringify(sourceLane.blocks)));
   lanes[laneIdx].swimmers = JSON.parse(JSON.stringify(sourceLane.swimmers));
@@ -2154,8 +2201,6 @@ function deletePreset(id) {
 
 function saveAsPreset() {
   document.getElementById('presetNameInput').value = '';
-  document.getElementById('presetLaneInput').value = '';
-  document.querySelector('input[name="presetType"][value="all"]').checked = true;
   document.getElementById('savePresetModal').classList.add('open');
 }
 
@@ -2163,21 +2208,8 @@ function confirmSavePreset() {
   const name = document.getElementById('presetNameInput').value.trim();
   if (!name) { showToast('Enter preset name'); return; }
 
-  const type = document.querySelector('input[name="presetType"]:checked').value;
-  let presetLanes;
-  let meta;
-
-  if (type === 'all') {
-    presetLanes = JSON.parse(JSON.stringify(lanes));
-    meta = `${lanes.length} lanes · 90 min`;
-  } else {
-    const laneId = parseInt(document.getElementById('presetLaneInput').value, 10);
-    if (!laneId) { showToast('Enter lane number'); return; }
-    const lane = lanes.find(l => l.id === laneId);
-    if (!lane) { showToast('Lane not found'); return; }
-    presetLanes = [JSON.parse(JSON.stringify(lane))];
-    meta = `Lane ${laneId} · 90 min`;
-  }
+  const presetLanes = JSON.parse(JSON.stringify(lanes));
+  const meta = `${lanes.length} lanes · ${practiceDurationMin} min`;
 
   const dots = presetLanes.flatMap(l => l.blocks.slice(0,1).map(b => {
     const map = { sprint: '#E8432D', tech: '#D97B2B', aerobic: '#2B7DD9', rest: '#9CA3AF' };
@@ -2185,7 +2217,7 @@ function confirmSavePreset() {
   })).slice(0,4);
   while (dots.length < 4) dots.push('#E2DFD6');
 
-  presets.push({ id: nextPresetId++, name, meta, dots, lanes: presetLanes, type });
+  presets.push({ id: nextPresetId++, name, meta, dots, lanes: presetLanes, type: 'all' });
   renderPresets();
   showToast(`"${name}" saved as preset`);
   closeSavePresetModal();
@@ -2194,7 +2226,7 @@ function confirmSavePreset() {
 function closeSavePresetModal() { document.getElementById('savePresetModal').classList.remove('open'); }
 
 // ── CALENDAR ──
-let calYear = 2026, calMonth = 2; // March 2026
+let calYear = 2026, calMonth = 3; // April 2026
 const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const practiceDays = {
@@ -2254,6 +2286,18 @@ const practiceDays = {
   ]
 };
 
+function isPastDay(key) {
+  const parts = key.split('-');
+  const year = parseInt(parts[0]);
+  const month = parseInt(parts[1]) - 1;
+  const day = parseInt(parts[2]);
+  const today = new Date();
+  if (year < today.getFullYear()) return true;
+  if (year === today.getFullYear() && month < today.getMonth()) return true;
+  if (year === today.getFullYear() && month === today.getMonth() && day < today.getDate()) return true;
+  return false;
+}
+
 function renderCalendar() {
   document.getElementById('calTitle').textContent = `${MONTHS[calMonth]} ${calYear}`;
   const namesEl = document.getElementById('calDayNames');
@@ -2275,10 +2319,11 @@ function renderCalendar() {
   for (let d = 1; d <= daysInMonth; d++) {
     const key = `${calYear}-${calMonth+1}-${d}`;
     const isToday = today.getFullYear()===calYear && today.getMonth()===calMonth && today.getDate()===d;
+    const past = isPastDay(key);
     const practices = practiceDays[key] || [];
 
     const cell = document.createElement('div');
-    cell.className = 'cal-day' + (isToday ? ' today' : '') + (practices.length > 0 ? ' has-practice' : '');
+    cell.className = 'cal-day' + (isToday ? ' today' : '') + (past ? ' past' : '') + (practices.length > 0 ? ' has-practice' : '');
     cell.onclick = () => openDay(d, key);
 
     let inner = `<div class="cal-day-num">${d}</div>`;
@@ -2315,11 +2360,16 @@ function changeMonth(dir) {
 let currentDayKey = null;
 let currentDayNum = null;
 let currentEditingPracticeIdx = null;
+let currentPracticeIsPast = false;
+let loadedPracticeKey = null;   // key of the practice currently open in the planner
+let loadedPracticeIdx = null;   // index within practiceDays[loadedPracticeKey]
 
 function openDay(d, key) {
   const practices = practiceDays[key] || [];
+  const past = isPastDay(key);
 
   if (practices.length === 0) {
+    if (past) { showToast("Can't create practices in the past"); return; }
     // Create new practice - show time input modal
     currentDayKey = key;
     currentDayNum = d;
@@ -2334,14 +2384,14 @@ function openDay(d, key) {
     document.getElementById('practiceTimeModal').classList.add('open');
   } else if (practices.length === 1) {
     // Load single practice or show edit option
-    showSinglePracticeOptions(d, key, practices[0]);
+    showSinglePracticeOptions(d, key, practices[0], past);
   } else {
     // Show practice selection modal
-    showPracticeSelection(d, key, practices);
+    showPracticeSelection(d, key, practices, past);
   }
 }
 
-function showSinglePracticeOptions(d, key, practice) {
+function showSinglePracticeOptions(d, key, practice, past) {
   const modal = document.createElement('div');
   modal.className = 'session-modal open';
   modal.innerHTML = `
@@ -2352,8 +2402,8 @@ function showSinglePracticeOptions(d, key, practice) {
       </div>
       <div style="display: flex; flex-direction: column; gap: 8px;">
         <button class="session-ok" onclick="loadPracticeFromOptions('${key}', 0)">Load Practice</button>
-        <button class="session-ok" onclick="editPracticeTime('${key}', 0)">Edit Time/Name</button>
-        <button class="session-ok" onclick="addNewPracticeToDay('${key}', ${d})">Add New Practice</button>
+        ${!past ? `<button class="session-ok" onclick="editPracticeTime('${key}', 0)">Edit Time/Name</button>` : ''}
+        ${!past ? `<button class="session-ok" onclick="addNewPracticeToDay('${key}', ${d})">Add New Practice</button>` : ''}
       </div>
       <div class="session-btns" style="margin-top: 16px;">
         <button class="session-cancel" onclick="closeSinglePracticeOptions()">Cancel</button>
@@ -2457,8 +2507,13 @@ function confirmPracticeTime() {
 
   // If editing existing practice
   if (currentEditingPracticeIdx !== null && currentEditingPracticeIdx !== undefined) {
+    const existingPractice = practiceDays[currentDayKey][currentEditingPracticeIdx];
+    if (blocksExceedDuration(existingPractice.lanes, durationMin)) {
+      showToast(`Can't shorten to ${durationMin} min — remove blocks that go past that mark first`);
+      return;
+    }
     practiceDays[currentDayKey][currentEditingPracticeIdx] = {
-      ...practiceDays[currentDayKey][currentEditingPracticeIdx],
+      ...existingPractice,
       time: time,
       name: name,
       type: type,
@@ -2496,6 +2551,11 @@ function closePracticeTimeModal() {
 }
 
 function loadPractice(practice, d, key) {
+  saveLanesToCurrentPractice(); // flush previous practice before switching
+  currentPracticeIsPast = isPastDay(key);
+  const idx = (practiceDays[key] || []).indexOf(practice);
+  loadedPracticeKey = key;
+  loadedPracticeIdx = idx >= 0 ? idx : 0;
   const month = MONTHS[calMonth];
   const dayName = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date(calYear,calMonth,d).getDay()];
   sessionName = `${dayName} ${month} ${d} - ${practice.time}`;
@@ -2507,10 +2567,11 @@ function loadPractice(practice, d, key) {
   lanes.forEach(lane => { lane.blocks = migrateBlocks(lane.blocks); });
   renderLanes();
   showScreen('planner', document.getElementById('navSets'));
-  showToast(`Loaded "${practice.name}"`);
+  const msg = currentPracticeIsPast ? `Loaded "${practice.name}" (read-only — past practice)` : `Loaded "${practice.name}"`;
+  showToast(msg);
 }
 
-function showPracticeSelection(d, key, practices) {
+function showPracticeSelection(d, key, practices, past) {
   const modal = document.createElement('div');
   modal.className = 'session-modal open';
   modal.innerHTML = `
@@ -2522,9 +2583,9 @@ function showPracticeSelection(d, key, practices) {
             ${practice.time} - ${practice.name} (${practice.type})
           </button>
         `).join('')}
-        <button class="session-ok" style="margin: 0; background: var(--sprint); color: white;" onclick="addNewPracticeToDay('${key}', ${d})">
+        ${!past ? `<button class="session-ok" style="margin: 0; background: var(--sprint); color: white;" onclick="addNewPracticeToDay('${key}', ${d})">
           + Add New Practice
-        </button>
+        </button>` : ''}
       </div>
       <div class="session-btns">
         <button class="session-cancel" onclick="closePracticeSelection()">Cancel</button>
@@ -2744,10 +2805,10 @@ function updateTriReadout(w) {
   `).join('');
 }
 
-canvas.addEventListener('mousedown', e => { draggingTri=true; moveDot(e); });
+canvas.addEventListener('mousedown', e => { if(currentPracticeIsPast) return; draggingTri=true; moveDot(e); });
 canvas.addEventListener('mousemove', e => { if(draggingTri) moveDot(e); });
 canvas.addEventListener('mouseup', () => draggingTri=false);
-canvas.addEventListener('touchstart', e => { e.preventDefault(); draggingTri=true; moveDot(e.touches[0]); });
+canvas.addEventListener('touchstart', e => { if(currentPracticeIsPast) return; e.preventDefault(); draggingTri=true; moveDot(e.touches[0]); });
 canvas.addEventListener('touchmove', e => { e.preventDefault(); if(draggingTri) moveDot(e.touches[0]); });
 canvas.addEventListener('touchend', () => draggingTri=false);
 
@@ -2816,6 +2877,7 @@ function formatPracticePlan() {
 }
 
 function sendToTeam() {
+  if (currentPracticeIsPast) { showToast("Can't send a past practice"); return; }
   const totalSwimmers = lanes.reduce((sum, l) => sum + l.swimmers.length, 0);
   document.getElementById('sentSub').textContent = `Practice sent to ${totalSwimmers} swimmer${totalSwimmers !== 1 ? 's' : ''}`;
   const plan = formatPracticePlan();
@@ -2855,7 +2917,7 @@ presets.forEach(p => p.lanes.forEach(l => { l.blocks = migrateBlocks(l.blocks); 
 Object.values(practiceDays).forEach(dayPractices => {
   dayPractices.forEach(p => p.lanes.forEach(l => { l.blocks = migrateBlocks(l.blocks); }));
 });
-renderLanes();
+renderCalendar();
 drawTri();
 </script>
 </body>
